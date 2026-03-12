@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import DesktopShell from '@/components/DesktopShell';
 import { Noto_Sans_KR } from 'next/font/google';
 import FirebaseBootstrap from '@/components/FirebaseBootstrap';
 import "./globals.css";
@@ -30,7 +31,9 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${notoSansKr.variable} bg-[var(--bg)] text-[var(--text)] antialiased`}>
-        <FirebaseBootstrap>{children}</FirebaseBootstrap>
+        <FirebaseBootstrap>
+          <DesktopShell>{children}</DesktopShell>
+        </FirebaseBootstrap>
       </body>
     </html>
   );

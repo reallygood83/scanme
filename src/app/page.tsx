@@ -19,7 +19,7 @@ import BottomNav from '@/components/BottomNav';
 import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
 import { summarizeGlucose, getLatestTrend, getTrendLabel } from '@/lib/glucose';
 import { getFlareRisk } from '@/lib/mockAI';
-import { storage, GlucoseEntry, MealEntry, UricAcidEntry } from '@/lib/storage';
+import { storage, GlucoseEntry, MealEntry, subscribeToStorageChanges, UricAcidEntry } from '@/lib/storage';
 
 const QUICK_ACTIONS = [
   { label: 'Libre 혈당', href: '/record?tab=glucose', icon: Activity, tone: 'bg-violet-50 text-violet-700' },
@@ -40,29 +40,34 @@ export default function HomePage() {
   const [libreMeta, setLibreMeta] = useState(storage.getLibreImportMeta());
 
   useEffect(() => {
-    const profile = storage.getProfile();
-    if (!profile.onboardingComplete) {
-      router.replace('/onboarding');
-      return;
-    }
+    const load = () => {
+      const profile = storage.getProfile();
+      if (!profile.onboardingComplete) {
+        router.replace('/onboarding');
+        return;
+      }
 
-    if (storage.getUricAcid().length === 0) {
-      storage.seedMockData();
-    }
+      if (storage.getUricAcid().length === 0) {
+        storage.seedMockData();
+      }
 
-    const uric = storage.getUricAcid();
-    const glucose = storage.getGlucose();
-    const meals = storage.getMeals();
-    const family = storage.getFamily();
-    const today = new Date().toISOString().split('T')[0];
+      const uric = storage.getUricAcid();
+      const glucose = storage.getGlucose();
+      const meals = storage.getMeals();
+      const family = storage.getFamily();
+      const today = new Date().toISOString().split('T')[0];
 
-    setName(profile.name);
-    setLatestUric(uric.at(-1) ?? null);
-    setGlucoseEntries(glucose);
-    setTodayMeals(meals.filter((meal) => meal.date === today));
-    setFamilyCount(family.length + 1);
-    setLibreMeta(storage.getLibreImportMeta());
-    setReady(true);
+      setName(profile.name);
+      setLatestUric(uric.at(-1) ?? null);
+      setGlucoseEntries(glucose);
+      setTodayMeals(meals.filter((meal) => meal.date === today));
+      setFamilyCount(family.length + 1);
+      setLibreMeta(storage.getLibreImportMeta());
+      setReady(true);
+    };
+
+    load();
+    return subscribeToStorageChanges(load);
   }, [router]);
 
   const glucoseSummary = useMemo(() => summarizeGlucose(glucoseEntries), [glucoseEntries]);
@@ -186,6 +191,7 @@ export default function HomePage() {
           <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
             {cloud.isAnonymous ? '현재 익명 Firebase 세션으로 동기화 중입니다.' : `${cloud.displayName || cloud.email || 'Google 계정'}으로 동기화 중입니다.`}
           </div>
+          {cloud.lastSyncedAt && <p className="mt-3 text-xs text-slate-400">최근 동기화: {new Date(cloud.lastSyncedAt).toLocaleString('ko-KR')}</p>}
           <Link href="/login" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-700">
             {cloud.isAnonymous ? 'Google 계정 연결하기' : '계정 상태 확인하기'}
             <ArrowRight size={14} />

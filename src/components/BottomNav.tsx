@@ -22,7 +22,7 @@ export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-3 left-1/2 z-50 w-[calc(100%-24px)] max-w-[406px] -translate-x-1/2 rounded-[28px] border border-white/80 bg-white/92 px-2 py-2 shadow-[0_18px_60px_rgba(15,23,42,0.16)] backdrop-blur">
+    <nav className="fixed bottom-3 left-1/2 z-50 w-[calc(100%-24px)] max-w-[406px] -translate-x-1/2 rounded-[28px] border border-white/80 bg-white/92 px-2 py-2 shadow-[0_18px_60px_rgba(15,23,42,0.16)] backdrop-blur lg:hidden">
       <ul className="flex items-center justify-around">
         {tabs.map(({ label, href, icon: Icon }) => {
           const isActive =

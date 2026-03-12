@@ -22,11 +22,25 @@
 body {
   background:
     radial-gradient(circle at top, rgba(219, 234, 254, 0.72), transparent 34%),
+    radial-gradient(circle at right, rgba(253, 230, 138, 0.18), transparent 28%),
     linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #ffffff 100%);
   color: var(--text);
   font-family: var(--font-body), 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   min-height: 100dvh;
   position: relative;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+  background-size: 32px 32px;
+  mask-image: radial-gradient(circle at center, black, transparent 78%);
+  z-index: -1;
 }
 
 .card {
