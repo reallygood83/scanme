@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   Activity,
   ArrowRight,
@@ -23,6 +22,7 @@ import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
 import { summarizeGlucose, getLatestTrend, getTrendLabel } from '@/lib/glucose';
 import { getFlareRisk } from '@/lib/mockAI';
 import { storage, GlucoseEntry, MealEntry, subscribeToStorageChanges, UricAcidEntry } from '@/lib/storage';
+import { loadDemoData } from '@/lib/demo-data';
 
 const QUICK_ACTIONS = [
   { label: 'Libre 혈당', href: '/record?tab=glucose', icon: Activity, color: 'neo-card-cyan' },
@@ -32,7 +32,6 @@ const QUICK_ACTIONS = [
 ];
 
 export default function HomePage() {
-  const router = useRouter();
   const { status: cloud } = useFirebaseStatus();
   const [ready, setReady] = useState(false);
   const [name, setName] = useState('');
@@ -45,14 +44,14 @@ export default function HomePage() {
   useEffect(() => {
     const load = () => {
       const profile = storage.getProfile();
+      
       if (!profile.onboardingComplete) {
-        router.replace('/onboarding');
-        return;
-      }
-
-      if (storage.getUricAcid().length === 0) {
+        loadDemoData();
+      } else if (storage.getUricAcid().length === 0) {
         storage.seedMockData();
       }
+      
+      const updatedProfile = storage.getProfile();
 
       const uric = storage.getUricAcid();
       const glucose = storage.getGlucose();
@@ -60,7 +59,7 @@ export default function HomePage() {
       const family = storage.getFamily();
       const today = new Date().toISOString().split('T')[0];
 
-      setName(profile.name);
+      setName(updatedProfile.name);
       setLatestUric(uric.at(-1) ?? null);
       setGlucoseEntries(glucose);
       setTodayMeals(meals.filter((meal) => meal.date === today));
@@ -71,7 +70,7 @@ export default function HomePage() {
 
     load();
     return subscribeToStorageChanges(load);
-  }, [router]);
+  }, []);
 
   const glucoseSummary = useMemo(() => summarizeGlucose(glucoseEntries), [glucoseEntries]);
   const latestGlucose = glucoseEntries.at(-1) ?? null;

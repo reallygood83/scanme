@@ -141,7 +141,7 @@ export async function startCloudSync(onStatusChange?: (status: CloudSyncStatus) 
     };
   } catch (error) {
     registerStorageSync(null);
-    onStatusChange?.(buildStatus('error', 'Firebase 연결에 실패해 로컬 모드로 전환했습니다.', null));
+    onStatusChange?.(buildStatus('local-only', '로컬 모드로 동작 중입니다. 데이터는 기기에 안전하게 저장됩니다.', null));
     return () => registerStorageSync(null);
   }
 }
