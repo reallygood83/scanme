@@ -7,6 +7,7 @@ import {
   Activity,
   ArrowRight,
   Brain,
+  Cloud,
   Droplets,
   HeartPulse,
   Salad,
@@ -15,6 +16,7 @@ import {
   Users,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
+import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
 import { summarizeGlucose, getLatestTrend, getTrendLabel } from '@/lib/glucose';
 import { getFlareRisk } from '@/lib/mockAI';
 import { storage, GlucoseEntry, MealEntry, UricAcidEntry } from '@/lib/storage';
@@ -28,6 +30,7 @@ const QUICK_ACTIONS = [
 
 export default function HomePage() {
   const router = useRouter();
+  const { status: cloud } = useFirebaseStatus();
   const [ready, setReady] = useState(false);
   const [name, setName] = useState('');
   const [latestUric, setLatestUric] = useState<UricAcidEntry | null>(null);
@@ -170,6 +173,23 @@ export default function HomePage() {
               최근 Libre 동기화: {libreMeta.fileName} · {libreMeta.readingCount}건 · {libreMeta.device || 'FreeStyle Libre'}
             </div>
           )}
+        </section>
+
+        <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">계정 및 동기화</p>
+              <p className="mt-1 text-xs text-slate-500">Google 로그인을 연결하면 데이터를 더 안정적으로 이어갈 수 있습니다.</p>
+            </div>
+            <Cloud size={18} className={cloud.isAnonymous ? 'text-slate-400' : 'text-sky-600'} />
+          </div>
+          <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            {cloud.isAnonymous ? '현재 익명 Firebase 세션으로 동기화 중입니다.' : `${cloud.displayName || cloud.email || 'Google 계정'}으로 동기화 중입니다.`}
+          </div>
+          <Link href="/login" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-sky-700">
+            {cloud.isAnonymous ? 'Google 계정 연결하기' : '계정 상태 확인하기'}
+            <ArrowRight size={14} />
+          </Link>
         </section>
 
         <section className="grid grid-cols-2 gap-3">

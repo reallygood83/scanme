@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
+import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
 import Header from '@/components/Header';
 import { storage } from '@/lib/storage';
 import {
@@ -16,9 +17,13 @@ import {
   Info,
   ChevronRight,
   Save,
+  Cloud,
+  LogIn,
+  LogOut,
 } from 'lucide-react';
 
 export default function SettingsPage() {
+  const { status: cloud, loginWithGoogle, logout, authBusy, authError, clearAuthError } = useFirebaseStatus();
   const [profile, setProfile] = useState(storage.getProfile());
   const [editingProfile, setEditingProfile] = useState(false);
   const [name, setName] = useState(profile.name);
@@ -45,7 +50,7 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     if (confirm('모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
-      localStorage.clear();
+      storage.clearAllData();
       window.location.reload();
     }
   };
@@ -141,6 +146,55 @@ export default function SettingsPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Cloud size={20} className={cloud.state === 'ready' ? 'text-sky-500' : cloud.state === 'error' ? 'text-amber-500' : 'text-gray-400'} />
+            <div>
+              <p className="font-medium text-gray-900">Firebase 동기화</p>
+              <p className="mt-1 text-sm text-gray-500">{cloud.message}</p>
+              {cloud.userId && <p className="mt-1 text-xs text-gray-400">사용자 ID: {cloud.userId}</p>}
+              {cloud.email && <p className="mt-1 text-xs text-gray-400">계정: {cloud.email}</p>}
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-2">
+            {cloud.isAnonymous ? (
+              <button
+                onClick={() => {
+                  clearAuthError();
+                  loginWithGoogle();
+                }}
+                disabled={authBusy}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              >
+                <LogIn size={16} />
+                {authBusy ? 'Google 로그인 연결 중...' : 'Google 로그인 연결'}
+              </button>
+            ) : (
+              <>
+                <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                  {cloud.displayName || cloud.email || 'Google 사용자'} 계정으로 동기화 중입니다.
+                </div>
+                <button
+                  onClick={() => {
+                    clearAuthError();
+                    logout();
+                  }}
+                  disabled={authBusy}
+                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                >
+                  <LogOut size={16} />
+                  {authBusy ? '로그아웃 중...' : '로그아웃'}
+                </button>
+              </>
+            )}
+            <div className="rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
+              익명 세션에서 Google 로그인을 연결하면 현재 Firebase 사용자에 계정을 링크해서 데이터를 최대한 유지합니다.
+            </div>
+            {authError && <div className="rounded-xl bg-rose-50 px-4 py-3 text-xs leading-5 text-rose-700">{authError}</div>}
+          </div>
         </div>
 
         {/* 가족 관리 */}
