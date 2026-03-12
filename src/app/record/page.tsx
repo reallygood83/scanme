@@ -12,7 +12,7 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import { storage, UricAcidEntry, GlucoseEntry, MealEntry } from '@/lib/storage';
+import { storage, subscribeToStorageChanges, UricAcidEntry, GlucoseEntry, MealEntry } from '@/lib/storage';
 import { analyzeMeal } from '@/lib/mockAI';
 import { getLatestTrend, getSourceLabel, getTodaySeries, getTrendLabel, summarizeGlucose } from '@/lib/glucose';
 import { parseLibreFile } from '@/lib/libre';
@@ -80,6 +80,7 @@ function UricAcidTab() {
     setDate(now.toISOString().split('T')[0]);
     setTime(now.toTimeString().slice(0, 5));
     load();
+    return subscribeToStorageChanges(load);
   }, [load]);
 
   const handleSave = () => {

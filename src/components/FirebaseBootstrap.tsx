@@ -10,6 +10,7 @@ const defaultStatus: CloudSyncStatus = {
   isAnonymous: true,
   displayName: null,
   email: null,
+  lastSyncedAt: null,
 };
 
 interface FirebaseContextValue {

@@ -14,6 +14,7 @@ export interface CloudSyncStatus {
   isAnonymous: boolean;
   displayName: string | null;
   email: string | null;
+  lastSyncedAt: string | null;
 }
 
 const SNAPSHOT_VERSION = 1;
@@ -32,6 +33,7 @@ function buildStatus(state: CloudSyncState, message: string, user: User | null):
     isAnonymous: user?.isAnonymous ?? true,
     displayName: user?.displayName ?? null,
     email: user?.email ?? null,
+    lastSyncedAt: null,
   };
 }
 
@@ -42,20 +44,32 @@ function getSnapshotRef(userId: string) {
 async function saveSnapshot(userId: string) {
   if (hydrating) return;
   const snapshot = getAppSnapshot();
+  const syncedAt = new Date().toISOString();
   await setDoc(getSnapshotRef(userId), {
     version: SNAPSHOT_VERSION,
     snapshot,
     updatedAt: serverTimestamp(),
+    syncedAt,
     appId: firebaseApp.name,
   }, { merge: true });
+  return syncedAt;
 }
 
-function queueSave(userId: string) {
+function queueSave(userId: string, onStatusChange?: (status: CloudSyncStatus) => void) {
   if (savingTimer) clearTimeout(savingTimer);
   savingTimer = setTimeout(() => {
-    saveSnapshot(userId).catch(() => {
-      // Keep local app fully usable even if cloud save fails.
-    });
+    saveSnapshot(userId)
+      .then((syncedAt) => {
+        const user = firebaseAuth.currentUser;
+        if (!user) return;
+        onStatusChange?.({
+          ...buildStatus('ready', user.isAnonymous ? '익명 Firebase 세션으로 동기화 중입니다.' : 'Google 계정으로 Firebase 동기화 중입니다.', user),
+          lastSyncedAt: syncedAt ?? null,
+        });
+      })
+      .catch(() => {
+        // Keep local app fully usable even if cloud save fails.
+      });
   }, 500);
 }
 
@@ -65,15 +79,17 @@ async function hydrateSnapshot(userId: string) {
     const localSnapshot = getAppSnapshot();
     const remoteDoc = await getDoc(getSnapshotRef(userId));
     const remoteSnapshot = remoteDoc.exists() ? (remoteDoc.data().snapshot as Partial<AppSnapshot> | undefined) : undefined;
+    const remoteSyncedAt = remoteDoc.exists() ? (remoteDoc.data().syncedAt as string | undefined) : undefined;
 
     if (remoteSnapshot && hasMeaningfulSnapshot(remoteSnapshot as AppSnapshot)) {
       replaceAppSnapshot(remoteSnapshot);
-      return;
+      return remoteSyncedAt ?? null;
     }
 
     if (hasMeaningfulSnapshot(localSnapshot)) {
-      await saveSnapshot(userId);
+      return (await saveSnapshot(userId)) ?? null;
     }
+    return null;
   } finally {
     hydrating = false;
   }
@@ -97,8 +113,8 @@ export async function startCloudSync(onStatusChange?: (status: CloudSyncStatus) 
   try {
     await bootFirebaseAnalytics();
     const user = await ensureSignedIn();
-    await hydrateSnapshot(user.uid);
-    registerStorageSync(() => queueSave(user.uid));
+    const initialSyncedAt = await hydrateSnapshot(user.uid);
+    registerStorageSync(() => queueSave(user.uid, onStatusChange));
 
     const unsubscribe = onAuthStateChanged(firebaseAuth, async (nextUser: User | null) => {
       if (!nextUser) {
@@ -107,12 +123,18 @@ export async function startCloudSync(onStatusChange?: (status: CloudSyncStatus) 
         return;
       }
 
-      await hydrateSnapshot(nextUser.uid);
-      registerStorageSync(() => queueSave(nextUser.uid));
-      onStatusChange?.(buildStatus('ready', nextUser.isAnonymous ? '익명 Firebase 세션으로 동기화 중입니다.' : 'Google 계정으로 Firebase 동기화 중입니다.', nextUser));
+      const syncedAt = await hydrateSnapshot(nextUser.uid);
+      registerStorageSync(() => queueSave(nextUser.uid, onStatusChange));
+      onStatusChange?.({
+        ...buildStatus('ready', nextUser.isAnonymous ? '익명 Firebase 세션으로 동기화 중입니다.' : 'Google 계정으로 Firebase 동기화 중입니다.', nextUser),
+        lastSyncedAt: syncedAt,
+      });
     });
 
-    onStatusChange?.(buildStatus('ready', user.isAnonymous ? '익명 Firebase 세션으로 동기화 중입니다.' : 'Google 계정으로 Firebase 동기화 중입니다.', user));
+    onStatusChange?.({
+      ...buildStatus('ready', user.isAnonymous ? '익명 Firebase 세션으로 동기화 중입니다.' : 'Google 계정으로 Firebase 동기화 중입니다.', user),
+      lastSyncedAt: initialSyncedAt,
+    });
     return () => {
       unsubscribe();
       registerStorageSync(null);

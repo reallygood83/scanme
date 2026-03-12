@@ -114,6 +114,16 @@ const STORAGE_KEYS = {
 
 let syncHandler: (() => void) | null = null;
 
+export function subscribeToStorageChanges(callback: () => void) {
+  if (typeof window === 'undefined') {
+    return () => {};
+  }
+
+  const handler = () => callback();
+  window.addEventListener('uricai-storage-changed', handler as EventListener);
+  return () => window.removeEventListener('uricai-storage-changed', handler as EventListener);
+}
+
 function emitStorageChange() {
   if (typeof window === 'undefined') return;
   window.dispatchEvent(new CustomEvent('uricai-storage-changed'));

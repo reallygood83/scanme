@@ -5,7 +5,7 @@ import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
 import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
 import Header from '@/components/Header';
-import { storage } from '@/lib/storage';
+import { storage, subscribeToStorageChanges } from '@/lib/storage';
 import {
   User,
   Bell,
@@ -35,10 +35,15 @@ export default function SettingsPage() {
   const [showAlerts, setShowAlerts] = useState(false);
 
   useEffect(() => {
-    const p = storage.getProfile();
-    setProfile(p);
-    setName(p.name);
-    setAge(p.age);
+    const load = () => {
+      const p = storage.getProfile();
+      setProfile(p);
+      setName(p.name);
+      setAge(p.age);
+    };
+
+    load();
+    return subscribeToStorageChanges(load);
   }, []);
 
   const saveProfile = () => {
@@ -156,6 +161,7 @@ export default function SettingsPage() {
               <p className="mt-1 text-sm text-gray-500">{cloud.message}</p>
               {cloud.userId && <p className="mt-1 text-xs text-gray-400">사용자 ID: {cloud.userId}</p>}
               {cloud.email && <p className="mt-1 text-xs text-gray-400">계정: {cloud.email}</p>}
+              {cloud.lastSyncedAt && <p className="mt-1 text-xs text-gray-400">최근 동기화: {new Date(cloud.lastSyncedAt).toLocaleString('ko-KR')}</p>}
             </div>
           </div>
 

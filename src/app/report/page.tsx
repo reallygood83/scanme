@@ -5,7 +5,7 @@ import { Activity, Droplets, FileDown, Lightbulb, Sparkles, TriangleAlert, Weigh
 import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import BottomNav from '@/components/BottomNav';
 import { getDailyAverages, summarizeGlucose } from '@/lib/glucose';
-import { storage, GlucoseEntry, MealEntry, UricAcidEntry, WeightEntry } from '@/lib/storage';
+import { storage, GlucoseEntry, MealEntry, subscribeToStorageChanges, UricAcidEntry, WeightEntry } from '@/lib/storage';
 
 export default function ReportPage() {
   const [uricData, setUricData] = useState<UricAcidEntry[]>([]);
@@ -15,11 +15,16 @@ export default function ReportPage() {
   const [libreMeta, setLibreMeta] = useState(storage.getLibreImportMeta());
 
   useEffect(() => {
-    setUricData(storage.getUricAcid());
-    setGlucoseData(storage.getGlucose());
-    setMealData(storage.getMeals());
-    setWeightData(storage.getWeight());
-    setLibreMeta(storage.getLibreImportMeta());
+    const load = () => {
+      setUricData(storage.getUricAcid());
+      setGlucoseData(storage.getGlucose());
+      setMealData(storage.getMeals());
+      setWeightData(storage.getWeight());
+      setLibreMeta(storage.getLibreImportMeta());
+    };
+
+    load();
+    return subscribeToStorageChanges(load);
   }, []);
 
   const glucoseSummary = useMemo(() => summarizeGlucose(glucoseData), [glucoseData]);

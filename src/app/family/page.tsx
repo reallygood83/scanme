@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Baby, Droplets, GlassWater, HeartPulse, Plus, Users } from 'lucide-react';
 import Header from '@/components/Header';
 import { summarizeGlucose } from '@/lib/glucose';
-import { storage, FamilyMember, MealEntry } from '@/lib/storage';
+import { storage, FamilyMember, MealEntry, subscribeToStorageChanges } from '@/lib/storage';
 
 export default function FamilyPage() {
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -13,15 +13,21 @@ export default function FamilyPage() {
   const [isKid, setIsKid] = useState(false);
   const [kidsMode, setKidsMode] = useState(false);
   const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
+  const [glucoseSummary, setGlucoseSummary] = useState(() => summarizeGlucose(storage.getGlucose()));
+  const [latestUric, setLatestUric] = useState(() => storage.getUricAcid().at(-1));
 
   useEffect(() => {
-    setMembers(storage.getFamily());
-    const today = new Date().toISOString().split('T')[0];
-    setTodayMeals(storage.getMeals().filter((meal) => meal.date === today));
-  }, []);
+    const load = () => {
+      setMembers(storage.getFamily());
+      const today = new Date().toISOString().split('T')[0];
+      setTodayMeals(storage.getMeals().filter((meal) => meal.date === today));
+      setGlucoseSummary(summarizeGlucose(storage.getGlucose()));
+      setLatestUric(storage.getUricAcid().at(-1));
+    };
 
-  const glucoseSummary = useMemo(() => summarizeGlucose(storage.getGlucose()), []);
-  const latestUric = storage.getUricAcid().at(-1);
+    load();
+    return subscribeToStorageChanges(load);
+  }, []);
 
   const addMember = () => {
     if (!newName.trim() || !newRelation.trim()) return;
