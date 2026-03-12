@@ -1,281 +1,184 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import {
-  TrendingDown,
-  TrendingUp,
-  Minus,
-  FileDown,
-  Droplets,
-  Activity,
-  Flame,
-  Weight,
-  Lightbulb,
-} from 'lucide-react';
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-} from 'recharts';
+import { useEffect, useMemo, useState } from 'react';
+import { Activity, Droplets, FileDown, Lightbulb, Sparkles, TriangleAlert, Weight } from 'lucide-react';
+import { CartesianGrid, Line, LineChart, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import BottomNav from '@/components/BottomNav';
-import { storage, UricAcidEntry, GlucoseEntry, MealEntry, WeightEntry } from '@/lib/storage';
-
-interface SummaryCard {
-  label: string;
-  value: string;
-  trend: 'up' | 'down' | 'flat';
-  trendLabel: string;
-  icon: React.ReactNode;
-  color: string;
-}
+import { getDailyAverages, summarizeGlucose } from '@/lib/glucose';
+import { storage, GlucoseEntry, MealEntry, UricAcidEntry, WeightEntry } from '@/lib/storage';
 
 export default function ReportPage() {
   const [uricData, setUricData] = useState<UricAcidEntry[]>([]);
   const [glucoseData, setGlucoseData] = useState<GlucoseEntry[]>([]);
   const [mealData, setMealData] = useState<MealEntry[]>([]);
   const [weightData, setWeightData] = useState<WeightEntry[]>([]);
+  const [libreMeta, setLibreMeta] = useState(storage.getLibreImportMeta());
 
   useEffect(() => {
     setUricData(storage.getUricAcid());
     setGlucoseData(storage.getGlucose());
     setMealData(storage.getMeals());
     setWeightData(storage.getWeight());
+    setLibreMeta(storage.getLibreImportMeta());
   }, []);
 
-  // Compute date range (this week)
-  const today = new Date();
-  const weekStart = new Date(today);
-  weekStart.setDate(today.getDate() - 6);
-  const formatShort = (d: Date) => `${d.getMonth() + 1}/${d.getDate()}`;
-  const dateRange = `${formatShort(weekStart)} ~ ${formatShort(today)}`;
+  const glucoseSummary = useMemo(() => summarizeGlucose(glucoseData), [glucoseData]);
+  const avgUric = uricData.length ? Number((uricData.reduce((sum, item) => sum + item.value, 0) / uricData.length).toFixed(1)) : 0;
+  const totalCalories = mealData.reduce((sum, item) => sum + item.calories, 0);
+  const weightDelta = weightData.length >= 2 ? Number((weightData.at(-1)!.value - weightData[0].value).toFixed(1)) : 0;
 
-  // Compute summary values
-  const avgUric =
-    uricData.length > 0
-      ? (uricData.reduce((s, e) => s + e.value, 0) / uricData.length).toFixed(1)
-      : '-';
-  const avgGlucose =
-    glucoseData.length > 0
-      ? Math.round(glucoseData.reduce((s, e) => s + e.value, 0) / glucoseData.length)
-      : '-';
-  const totalCalories =
-    mealData.length > 0
-      ? mealData.reduce((s, e) => s + e.calories, 0).toLocaleString()
-      : '-';
-
-  const weightDelta =
-    weightData.length >= 2
-      ? (weightData[weightData.length - 1].value - weightData[0].value).toFixed(1)
-      : '-';
-
-  const uricTrend: 'up' | 'down' | 'flat' =
-    uricData.length >= 2
-      ? uricData[uricData.length - 1].value < uricData[0].value
-        ? 'down'
-        : uricData[uricData.length - 1].value > uricData[0].value
-          ? 'up'
-          : 'flat'
-      : 'flat';
-
-  const glucoseTrend: 'up' | 'down' | 'flat' = 'flat';
-
-  const weightTrendDir: 'up' | 'down' | 'flat' =
-    weightData.length >= 2
-      ? weightData[weightData.length - 1].value < weightData[0].value
-        ? 'down'
-        : weightData[weightData.length - 1].value > weightData[0].value
-          ? 'up'
-          : 'flat'
-      : 'flat';
-
-  const summaryCards: SummaryCard[] = [
-    {
-      label: '평균 요산',
-      value: avgUric !== '-' ? `${avgUric} mg/dL` : '-',
-      trend: uricTrend,
-      trendLabel: uricTrend === 'down' ? '개선' : uricTrend === 'up' ? '상승' : '유지',
-      icon: <Droplets size={20} />,
-      color: 'text-red-500',
-    },
-    {
-      label: '평균 혈당',
-      value: avgGlucose !== '-' ? `${avgGlucose} mg/dL` : '-',
-      trend: glucoseTrend,
-      trendLabel: '안정',
-      icon: <Activity size={20} />,
-      color: 'text-blue-500',
-    },
-    {
-      label: '총 칼로리',
-      value: totalCalories !== '-' ? `${totalCalories} kcal` : '-',
-      trend: 'flat',
-      trendLabel: '이번 주',
-      icon: <Flame size={20} />,
-      color: 'text-orange-500',
-    },
-    {
-      label: '체중 변화',
-      value: weightDelta !== '-' ? `${Number(weightDelta) > 0 ? '+' : ''}${weightDelta} kg` : '-',
-      trend: weightTrendDir,
-      trendLabel: weightTrendDir === 'down' ? '감소' : weightTrendDir === 'up' ? '증가' : '유지',
-      icon: <Weight size={20} />,
-      color: 'text-green-500',
-    },
-  ];
-
-  const TrendIcon = ({ trend }: { trend: 'up' | 'down' | 'flat' }) => {
-    if (trend === 'down') return <TrendingDown size={16} className="text-green-500" />;
-    if (trend === 'up') return <TrendingUp size={16} className="text-red-500" />;
-    return <Minus size={16} className="text-gray-400" />;
-  };
-
-  // Uric Acid chart data
-  const uricChartData = uricData.map((e) => ({
-    date: e.date.slice(5).replace('-', '/'),
-    value: e.value,
+  const uricChartData = uricData.map((entry) => ({
+    date: entry.date.slice(5).replace('-', '/'),
+    value: entry.value,
   }));
-
-  // Glucose chart data: average per day
-  const glucoseByDay = glucoseData.reduce<Record<string, number[]>>((acc, e) => {
-    const key = e.date.slice(5).replace('-', '/');
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(e.value);
-    return acc;
-  }, {});
-  const glucoseChartData = Object.entries(glucoseByDay).map(([date, values]) => ({
-    date,
-    value: Math.round(values.reduce((s, v) => s + v, 0) / values.length),
+  const glucoseChartData = getDailyAverages(glucoseData);
+  const weightChartData = weightData.map((entry) => ({
+    date: entry.date.slice(5).replace('-', '/'),
+    value: entry.value,
   }));
 
   const insights = [
-    '요산 수치가 7.2에서 6.1로 개선되었습니다!',
-    '식후 혈당 스파이크가 3회 감지되었습니다.',
-    '체중이 1.5kg 감소했습니다. 목표까지 3.5kg 남았습니다.',
+    libreMeta
+      ? `${libreMeta.fileName} 파일에서 ${libreMeta.readingCount}건을 가져와 혈당 흐름을 분석 중입니다.`
+      : 'LibreView 데이터 업로드를 연결하면 실제 CGM 흐름 기반 리포트로 바뀝니다.',
+    glucoseSummary.timeInRange >= 70
+      ? `TIR ${glucoseSummary.timeInRange}%로 비교적 안정적입니다.`
+      : `TIR ${glucoseSummary.timeInRange}%로 범위 밖 시간이 많아 식후 패턴 점검이 필요합니다.`,
+    glucoseSummary.spikeCount > 0
+      ? `최근 스파이크 ${glucoseSummary.spikeCount}회가 감지되어 식사 기록과 함께 보는 것이 좋습니다.`
+      : '급격한 스파이크가 크지 않아 현재 식사 루틴이 비교적 안정적입니다.',
   ];
 
-  const handlePdfDownload = () => {
-    alert('Pro 플랜에서 이용 가능합니다');
-  };
+  const cards = [
+    { label: '평균 혈당', value: glucoseSummary.totalCount ? `${glucoseSummary.average} mg/dL` : '--', icon: Activity, tone: 'text-violet-700 bg-violet-50' },
+    { label: '평균 요산', value: uricData.length ? `${avgUric} mg/dL` : '--', icon: Droplets, tone: 'text-sky-700 bg-sky-50' },
+    { label: 'GMI', value: glucoseSummary.totalCount ? `${glucoseSummary.gmi}%` : '--', icon: Sparkles, tone: 'text-emerald-700 bg-emerald-50' },
+    { label: '체중 변화', value: weightData.length >= 2 ? `${weightDelta > 0 ? '+' : ''}${weightDelta} kg` : '--', icon: Weight, tone: 'text-amber-700 bg-amber-50' },
+  ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <header className="flex items-center justify-center h-14 px-4 bg-white border-b border-gray-100">
-        <h1 className="text-lg font-semibold">주간 리포트</h1>
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#f2f8ff,transparent_36%),linear-gradient(180deg,#f8fbff_0%,#f8fafc_100%)] pb-24">
+      <header className="mx-auto flex max-w-[430px] items-center justify-between px-4 pb-2 pt-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-500">Weekly Overview</p>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-950">주간 리포트</h1>
+        </div>
+        <button onClick={() => alert('의사 공유용 PDF는 다음 단계에서 연결됩니다.')} className="rounded-2xl bg-slate-950 p-3 text-white shadow-sm">
+          <FileDown size={18} />
+        </button>
       </header>
 
-      <div className="px-4 py-4 space-y-5">
-        {/* Date Range */}
-        <div className="text-center">
-          <span className="text-sm text-gray-500">이번 주: </span>
-          <span className="text-sm font-medium text-gray-800">{dateRange}</span>
-        </div>
+      <main className="mx-auto flex max-w-[430px] flex-col gap-4 px-4">
+        <section className="rounded-[28px] bg-slate-950 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.14)]">
+          <p className="text-sm text-slate-300">Libre + 요산 + 체중을 한 화면에서 요약합니다.</p>
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            {cards.map(({ label, value, icon: Icon, tone }) => (
+              <div key={label} className="rounded-[24px] bg-white/8 p-4">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-slate-300">{label}</span>
+                  <span className={`rounded-full p-2 ${tone}`}><Icon size={14} /></span>
+                </div>
+                <p className="mt-3 text-xl font-semibold text-white">{value}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 gap-3">
-          {summaryCards.map((card) => (
-            <div
-              key={card.label}
-              className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <span className={card.color}>{card.icon}</span>
-                <span className="text-xs text-gray-500">{card.label}</span>
-              </div>
-              <p className="text-lg font-bold text-gray-900">{card.value}</p>
-              <div className="flex items-center gap-1 mt-1">
-                <TrendIcon trend={card.trend} />
-                <span className="text-xs text-gray-500">{card.trendLabel}</span>
-              </div>
+        <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">혈당 일평균 추이</p>
+              <p className="mt-1 text-xs text-slate-500">Libre와 수동 기록을 합산해 일 단위로 정리합니다.</p>
             </div>
-          ))}
-        </div>
-
-        {/* Uric Acid Chart */}
-        {uricChartData.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">요산 수치 추이</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={uricChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis domain={[5, 9]} tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(v: number) => [`${v} mg/dL`, '요산']}
-                  contentStyle={{ fontSize: 12 }}
-                />
-                <ReferenceLine y={7.0} stroke="#ef4444" strokeDasharray="4 4" label={{ value: '위험', fontSize: 10, fill: '#ef4444' }} />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#8b5cf6"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: '#8b5cf6' }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+            <span className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">TIR {glucoseSummary.timeInRange}%</span>
           </div>
-        )}
+          {glucoseChartData.length > 0 ? (
+            <div className="mt-4" role="img" aria-label={`주간 혈당 일평균 차트, ${glucoseChartData.length}일 데이터`}>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={glucoseChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis domain={[70, 220]} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <Tooltip formatter={(value: number) => [`${value} mg/dL`, '평균 혈당']} />
+                  <ReferenceLine y={140} stroke="#f59e0b" strokeDasharray="4 4" />
+                  <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="value" stroke="#7c3aed" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: '#7c3aed' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">표시할 혈당 데이터가 없습니다.</div>
+          )}
+        </section>
 
-        {/* Glucose Chart */}
-        {glucoseChartData.length > 0 && (
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-            <h2 className="text-sm font-semibold text-gray-700 mb-3">혈당 추이 (일 평균)</h2>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={glucoseChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis domain={[70, 180]} tick={{ fontSize: 11 }} />
-                <Tooltip
-                  formatter={(v: number) => [`${v} mg/dL`, '혈당']}
-                  contentStyle={{ fontSize: 12 }}
-                />
-                <ReferenceLine y={140} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: '주의', fontSize: 10, fill: '#f59e0b' }} />
-                <Line
-                  type="monotone"
-                  dataKey="value"
-                  stroke="#3b82f6"
-                  strokeWidth={2}
-                  dot={{ r: 4, fill: '#3b82f6' }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+        <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">요산 추이</p>
+              <p className="mt-1 text-xs text-slate-500">통풍 위험선 7.0mg/dL을 함께 표시합니다.</p>
+            </div>
+            <span className="rounded-full bg-sky-50 px-3 py-1 text-xs font-semibold text-sky-700">평균 {avgUric || '--'}mg/dL</span>
           </div>
-        )}
+          {uricChartData.length > 0 ? (
+            <div className="mt-4" role="img" aria-label={`주간 요산 차트, ${uricChartData.length}개 측정값`}>
+              <ResponsiveContainer width="100%" height={220}>
+                <LineChart data={uricChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis domain={[4.5, 9]} tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <Tooltip formatter={(value: number) => [`${value} mg/dL`, '요산']} />
+                  <ReferenceLine y={7} stroke="#ef4444" strokeDasharray="4 4" />
+                  <Line type="monotone" dataKey="value" stroke="#0ea5e9" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: '#0ea5e9' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">표시할 요산 데이터가 없습니다.</div>
+          )}
+        </section>
 
-        {/* AI Insights */}
-        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 mb-3">
-            <Lightbulb size={18} className="text-yellow-500" />
-            <h2 className="text-sm font-semibold text-gray-700">AI 인사이트</h2>
+        <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-slate-900">체중 흐름</p>
+              <p className="mt-1 text-xs text-slate-500">GLP-1 또는 다이어트 구간과 함께 보세요.</p>
+            </div>
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">총 {weightData.length}건</span>
           </div>
-          <ul className="space-y-2">
-            {insights.map((text, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-purple-400 flex-shrink-0" />
-                {text}
-              </li>
+          {weightChartData.length > 0 ? (
+            <div className="mt-4" role="img" aria-label={`체중 변화 차트, ${weightChartData.length}개 측정값`}>
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={weightChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#64748b' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#64748b' }} domain={['dataMin - 1', 'dataMax + 1']} />
+                  <Tooltip formatter={(value: number) => [`${value} kg`, '체중']} />
+                  <Line type="monotone" dataKey="value" stroke="#f59e0b" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: '#f59e0b' }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">체중 데이터가 없습니다.</div>
+          )}
+        </section>
+
+        <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <div className="flex items-center gap-2">
+            <Lightbulb size={18} className="text-amber-500" />
+            <p className="text-sm font-semibold text-slate-900">AI 인사이트 초안</p>
+          </div>
+          <ul className="mt-4 space-y-3">
+            {insights.map((insight) => (
+              <li key={insight} className="rounded-2xl bg-slate-50 px-4 py-3 text-sm leading-6 text-slate-600">{insight}</li>
             ))}
           </ul>
-        </div>
-
-        {/* PDF Download Button */}
-        <button
-          type="button"
-          onClick={handlePdfDownload}
-          className="w-full flex items-center justify-center gap-2 h-12 bg-gray-900 text-white rounded-xl font-medium text-sm hover:bg-gray-800 transition-colors"
-        >
-          <FileDown size={18} />
-          PDF 다운로드
-        </button>
-      </div>
+          <div className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-xs leading-5 text-amber-800">
+            <TriangleAlert size={14} className="mr-1 inline" />
+            이 리포트는 자기관리용 요약이며 진단을 대체하지 않습니다.
+          </div>
+          <div className="mt-4 text-xs text-slate-400">총 식사 {mealData.length}건 · 누적 칼로리 {totalCalories.toLocaleString()}kcal</div>
+        </section>
+      </main>
 
       <BottomNav />
     </div>
