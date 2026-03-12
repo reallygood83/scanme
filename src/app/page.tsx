@@ -6,7 +6,6 @@ import {
   Activity,
   ArrowRight,
   Brain,
-  Cloud,
   Droplets,
   HeartPulse,
   Salad,
@@ -14,32 +13,20 @@ import {
   Syringe,
   TrendingDown,
   TrendingUp,
-  Users,
-  Zap,
+  Minus,
 } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
-import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
 import { summarizeGlucose, getLatestTrend, getTrendLabel } from '@/lib/glucose';
 import { getFlareRisk } from '@/lib/mockAI';
 import { storage, GlucoseEntry, MealEntry, subscribeToStorageChanges, UricAcidEntry } from '@/lib/storage';
 import { loadDemoData } from '@/lib/demo-data';
 
-const QUICK_ACTIONS = [
-  { label: 'Libre 혈당', href: '/record?tab=glucose', icon: Activity, color: 'neo-card-cyan' },
-  { label: '요산 기록', href: '/record?tab=uric', icon: Droplets, color: 'neo-card-violet' },
-  { label: '식사 분석', href: '/record?tab=meal', icon: Salad, color: 'neo-card-orange' },
-  { label: 'AI 코치', href: '/coach', icon: Brain, color: 'neo-card-lime' },
-];
-
 export default function HomePage() {
-  const { status: cloud } = useFirebaseStatus();
   const [ready, setReady] = useState(false);
   const [name, setName] = useState('');
   const [latestUric, setLatestUric] = useState<UricAcidEntry | null>(null);
   const [glucoseEntries, setGlucoseEntries] = useState<GlucoseEntry[]>([]);
   const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
-  const [familyCount, setFamilyCount] = useState(0);
-  const [libreMeta, setLibreMeta] = useState(storage.getLibreImportMeta());
 
   useEffect(() => {
     const load = () => {
@@ -56,15 +43,12 @@ export default function HomePage() {
       const uric = storage.getUricAcid();
       const glucose = storage.getGlucose();
       const meals = storage.getMeals();
-      const family = storage.getFamily();
       const today = new Date().toISOString().split('T')[0];
 
       setName(updatedProfile.name);
       setLatestUric(uric.at(-1) ?? null);
       setGlucoseEntries(glucose);
       setTodayMeals(meals.filter((meal) => meal.date === today));
-      setFamilyCount(family.length + 1);
-      setLibreMeta(storage.getLibreImportMeta());
       setReady(true);
     };
 
@@ -82,197 +66,173 @@ export default function HomePage() {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="neo-card neo-animate-scale-in p-8 text-center">
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="text-center">
           <div className="neo-spinner neo-spinner-lg mx-auto mb-4" />
-          <p className="neo-subtitle">UricAI 준비 중...</p>
+          <p className="font-semibold text-slate-600">데이터 로딩 중...</p>
         </div>
       </div>
     );
   }
 
-  const todayLabel = new Intl.DateTimeFormat('ko-KR', {
-    month: 'long',
-    day: 'numeric',
-    weekday: 'short',
-  }).format(new Date());
-
-  const getRiskBadge = () => {
-    if (flareRisk.level === 'high') return 'neo-badge-rose';
-    if (flareRisk.level === 'medium') return 'neo-badge-orange';
-    return 'neo-badge-lime';
+  const getTrendIcon = () => {
+    if (latestTrend === 'rising' || latestTrend === 'rising_fast') 
+      return <TrendingUp size={24} className="text-orange-500" />;
+    if (latestTrend === 'falling' || latestTrend === 'falling_fast') 
+      return <TrendingDown size={24} className="text-cyan-500" />;
+    return <Minus size={24} className="text-slate-400" />;
   };
 
-  const getRiskLabel = () => {
-    if (flareRisk.level === 'high') return '주의 필요';
-    if (flareRisk.level === 'medium') return '보통';
-    return '안정';
+  const getRiskColor = () => {
+    if (flareRisk.level === 'high') return 'bg-rose-100 border-rose-300 text-rose-700';
+    if (flareRisk.level === 'medium') return 'bg-orange-100 border-orange-300 text-orange-700';
+    return 'bg-lime-100 border-lime-300 text-lime-700';
   };
 
   return (
-    <div className="min-h-screen pb-28 lg:pb-8">
-      <div className="neo-stagger mx-auto flex max-w-[500px] flex-col gap-5 px-4 py-6 lg:max-w-none lg:px-6">
-        <header className="flex items-start justify-between gap-4">
-          <div>
-            <div className="neo-badge-dark mb-3">
-              <Sparkles size={12} />
-              FAMILY HEALTH
-            </div>
-            <h1 className="neo-title-lg">{name}님,<br />오늘도 건강하세요</h1>
-            <p className="neo-body mt-3 text-slate-600">
-              {todayLabel} · 요산, 혈당, 식사를 한 번에 확인하세요.
-            </p>
-          </div>
-          <Link href="/family" className="neo-icon-btn">
-            <Users size={22} />
-          </Link>
-        </header>
+    <div className="pb-28 lg:pb-0">
+      <div className="mb-8">
+        <p className="text-sm font-semibold text-slate-500">안녕하세요,</p>
+        <h1 className="mt-1 text-3xl font-black tracking-tight lg:text-4xl">
+          {name}님의 건강 대시보드
+        </h1>
+      </div>
 
-        <section className="neo-card-dark neo-animate-glow p-6">
-          <div className="flex items-start justify-between gap-4">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="neo-card-dark p-6 lg:p-8">
+          <div className="flex items-start justify-between">
             <div>
-              <div className="neo-badge-lime mb-4">
-                <Zap size={12} />
-                {libreMeta ? 'LIBRE 연동' : '수동 모드'}
+              <p className="text-sm font-medium text-slate-400">현재 혈당</p>
+              <div className="mt-2 flex items-end gap-2">
+                <span className="text-5xl font-black text-white lg:text-6xl">
+                  {latestGlucose?.value ?? '--'}
+                </span>
+                <span className="mb-2 text-lg text-slate-400">mg/dL</span>
               </div>
-              <p className="neo-caption text-slate-400">현재 혈당</p>
-              <div className="mt-2 flex items-end gap-3">
-                <span className="neo-stat-value">{latestGlucose?.value ?? '--'}</span>
-                <span className="mb-2 text-lg font-semibold text-slate-400">mg/dL</span>
-                {latestTrend === 'rising' && <TrendingUp size={28} className="mb-2 text-orange-400" />}
-                {latestTrend === 'falling' && <TrendingDown size={28} className="mb-2 text-cyan-400" />}
+              <div className="mt-3 flex items-center gap-2">
+                {getTrendIcon()}
+                <span className="text-sm font-semibold text-slate-300">
+                  {getTrendLabel(latestTrend)}
+                </span>
               </div>
-              <p className="neo-body mt-3 text-slate-300">
-                {getTrendLabel(latestTrend)} · TIR {glucoseSummary.timeInRange}% · 평균 {glucoseSummary.average || '--'}mg/dL
+            </div>
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-lime-400 bg-slate-800">
+              <HeartPulse size={28} className="text-lime-400" />
+            </div>
+          </div>
+          
+          <div className="mt-6 grid grid-cols-3 gap-4 border-t border-slate-700 pt-6">
+            <div>
+              <p className="text-xs text-slate-500">TIR</p>
+              <p className="mt-1 text-xl font-bold text-white">{glucoseSummary.timeInRange}%</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">평균</p>
+              <p className="mt-1 text-xl font-bold text-white">{glucoseSummary.average || '--'}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-500">GMI</p>
+              <p className="mt-1 text-xl font-bold text-white">{glucoseSummary.gmi || '--'}%</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="neo-card p-6 lg:p-8">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-slate-500">최근 요산</p>
+              <div className="mt-2 flex items-end gap-2">
+                <span className="text-5xl font-black lg:text-6xl">
+                  {latestUric?.value.toFixed(1) ?? '--'}
+                </span>
+                <span className="mb-2 text-lg text-slate-400">mg/dL</span>
+              </div>
+              <p className="mt-3 text-sm text-slate-500">
+                {latestUric?.date ? `${latestUric.date} 측정` : '데이터 없음'}
               </p>
             </div>
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl border-3 border-lime-400 bg-slate-800">
-              <HeartPulse size={32} className="text-lime-400" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-black bg-violet-200">
+              <Droplets size={28} />
             </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border-2 border-slate-700 bg-slate-800 p-4">
-              <p className="text-xs font-semibold text-slate-400">최근 요산</p>
-              <div className="mt-2 flex items-end gap-1">
-                <span className="text-2xl font-black">{latestUric ? latestUric.value.toFixed(1) : '--'}</span>
-                <span className="mb-0.5 text-sm font-medium text-slate-400">mg/dL</span>
-              </div>
-            </div>
-            <div className="rounded-xl border-2 border-slate-700 bg-slate-800 p-4">
-              <p className="text-xs font-semibold text-slate-400">오늘 식사</p>
-              <div className="mt-2 flex items-end gap-1">
-                <span className="text-2xl font-black">{todayMeals.length}</span>
-                <span className="mb-0.5 text-sm font-medium text-slate-400">끼</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="grid grid-cols-2 gap-4">
-          <div className="neo-card p-5">
-            <p className="neo-caption">GMI 추정</p>
-            <div className="mt-3 flex items-end gap-1">
-              <span className="text-4xl font-black">{glucoseSummary.gmi || '--'}</span>
-              <span className="mb-1 text-lg font-semibold text-slate-500">%</span>
-            </div>
-            <p className="mt-2 text-xs text-slate-500">
-              Libre + 수동 기록 기준
+          <div className={`mt-6 rounded-xl border-2 p-4 ${getRiskColor()}`}>
+            <p className="text-sm font-bold">
+              {flareRisk.level === 'high' ? '⚠️ 주의 필요' : 
+               flareRisk.level === 'medium' ? '📊 보통' : '✅ 안정'}
             </p>
+            <p className="mt-1 text-sm">{flareRisk.message}</p>
           </div>
-          <div className="neo-card p-5">
-            <p className="neo-caption">가족 관리</p>
-            <div className="mt-3 flex items-end gap-1">
-              <span className="text-4xl font-black">{familyCount}</span>
-              <span className="mb-1 text-lg font-semibold text-slate-500">명</span>
-            </div>
-            <p className="mt-2 text-xs text-slate-500">
-              가족과 함께 건강 관리
-            </p>
-          </div>
-        </section>
+        </div>
+      </div>
 
-        <section className="neo-card p-5">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="neo-subtitle">오늘의 리스크 브리핑</p>
-              <p className="mt-1 text-sm text-slate-500">통풍과 혈당을 함께 분석한 AI 코칭</p>
-            </div>
-            <span className={`neo-badge ${getRiskBadge()}`}>{getRiskLabel()}</span>
-          </div>
-          <p className="neo-body mt-4 text-slate-700">{flareRisk.message}</p>
-          {libreMeta && (
-            <div className="mt-4 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3">
-              <p className="text-xs font-semibold text-slate-600">
-                최근 Libre: {libreMeta.fileName} · {libreMeta.readingCount}건
-              </p>
-            </div>
-          )}
-        </section>
-
-        <section className="neo-card p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="neo-subtitle">계정 및 동기화</p>
-              <p className="mt-1 text-sm text-slate-500">
-                Google 계정을 연결하여 데이터를 안전하게 백업하세요.
-              </p>
-            </div>
-            <div className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 border-black ${cloud.isAnonymous ? 'bg-slate-100' : 'bg-lime-300'}`}>
-              <Cloud size={22} />
-            </div>
-          </div>
-          <div className="mt-4 rounded-xl border-2 border-slate-200 bg-slate-50 px-4 py-3">
-            <p className="text-sm font-medium">
-              {cloud.isAnonymous 
-                ? '익명 Firebase 세션으로 동기화 중' 
-                : `${cloud.displayName || cloud.email || 'Google 계정'}으로 동기화 중`
-              }
-            </p>
-          </div>
-          {cloud.lastSyncedAt && (
-            <p className="mt-3 text-xs text-slate-400">
-              최근 동기화: {new Date(cloud.lastSyncedAt).toLocaleString('ko-KR')}
-            </p>
-          )}
-          <Link href="/login" className="neo-btn neo-btn-primary mt-4 w-full">
-            {cloud.isAnonymous ? 'Google 계정 연결하기' : '계정 상태 확인'}
-            <ArrowRight size={18} />
-          </Link>
-        </section>
-
-        <section className="grid grid-cols-2 gap-4">
-          {QUICK_ACTIONS.map(({ label, href, icon: Icon, color }) => (
+      <div className="mt-8">
+        <h2 className="mb-4 text-lg font-bold">빠른 액션</h2>
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[
+            { label: 'Libre 업로드', href: '/record?tab=glucose', icon: Activity, color: 'neo-card-cyan' },
+            { label: '요산 기록', href: '/record?tab=uric', icon: Droplets, color: 'neo-card-violet' },
+            { label: '식사 기록', href: '/record?tab=meal', icon: Salad, color: 'neo-card-orange' },
+            { label: 'AI 코치', href: '/coach', icon: Brain, color: 'neo-card-lime' },
+          ].map(({ label, href, icon: Icon, color }) => (
             <Link 
               key={href} 
               href={href} 
-              className={`${color} p-5 transition-all hover:translate-x-[-2px] hover:translate-y-[-2px] hover:shadow-[10px_10px_0px_rgba(0,0,0,1)]`}
+              className={`${color} flex flex-col items-center p-5 text-center transition-all hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)]`}
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-black bg-white">
                 <Icon size={24} />
               </div>
-              <p className="mt-4 text-base font-bold">{label}</p>
-              <div className="mt-2 flex items-center gap-1 text-sm font-semibold">
-                바로가기
-                <ArrowRight size={16} />
-              </div>
+              <p className="mt-3 text-sm font-bold">{label}</p>
             </Link>
           ))}
-        </section>
+        </div>
+      </div>
 
-        <section className="neo-card-orange p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="neo-subtitle">GLP-1 + 혈당 + 요산</p>
-              <p className="neo-body mt-2 text-slate-800">
-                체중 감량 중 요산이 흔들리는 시점을 함께 보는 것이 UricAI의 차별점입니다.
-              </p>
+      <div className="mt-8">
+        <h2 className="mb-4 text-lg font-bold">오늘의 요약</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="neo-card p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-orange-200">
+                <Salad size={20} />
+              </div>
+              <div>
+                <p className="text-2xl font-black">{todayMeals.length}</p>
+                <p className="text-sm text-slate-500">오늘 식사</p>
+              </div>
             </div>
-            <Link href="/glp1" className="neo-icon-btn">
-              <Syringe size={22} />
-            </Link>
           </div>
-        </section>
+          <div className="neo-card p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-cyan-200">
+                <Activity size={20} />
+              </div>
+              <div>
+                <p className="text-2xl font-black">{glucoseSummary.totalCount}</p>
+                <p className="text-sm text-slate-500">혈당 기록</p>
+              </div>
+            </div>
+          </div>
+          <div className="neo-card p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-violet-200">
+                <Sparkles size={20} />
+              </div>
+              <div>
+                <p className="text-2xl font-black">{glucoseSummary.spikeCount}</p>
+                <p className="text-sm text-slate-500">혈당 스파이크</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-8 hidden lg:block">
+        <Link href="/report" className="neo-btn neo-btn-dark w-full justify-center py-4">
+          주간 리포트 보기
+          <ArrowRight size={18} />
+        </Link>
       </div>
 
       <BottomNav />

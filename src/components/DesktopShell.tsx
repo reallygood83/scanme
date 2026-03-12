@@ -5,16 +5,14 @@ import { usePathname } from 'next/navigation';
 import { 
   Activity, 
   BarChart3, 
-  Heart, 
   Home, 
   Settings, 
   Sparkles, 
-  Users, 
-  Zap,
-  TrendingUp,
-  Shield,
-  Smartphone
+  Users,
+  Menu,
+  X
 } from 'lucide-react';
+import { useState } from 'react';
 
 const NAV_ITEMS = [
   { label: '홈', href: '/', icon: Home },
@@ -24,142 +22,94 @@ const NAV_ITEMS = [
   { label: '설정', href: '/settings', icon: Settings },
 ];
 
-const FEATURES = [
-  { icon: TrendingUp, label: 'Libre CGM', desc: '실시간 혈당 데이터' },
-  { icon: Shield, label: 'Firebase', desc: '클라우드 동기화' },
-  { icon: Heart, label: '가족 케어', desc: '함께 관리하는 건강' },
-];
-
 export default function DesktopShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[320px_1fr_320px] lg:gap-6 lg:p-6 xl:gap-8 xl:p-8">
-      <aside className="hidden lg:flex lg:flex-col lg:gap-6">
-        <div className="neo-card-lime p-6">
-          <div className="neo-badge-dark mb-4">
-            <Sparkles size={12} />
-            URICAI
-          </div>
-          <h1 className="neo-title text-black">
-            가족 대사 건강을<br />함께 관리합니다
-          </h1>
-          <p className="neo-body mt-4 text-slate-800">
-            요산, 혈당, 식사를 한 화면에서 확인하고 AI 코치의 개인화된 조언을 받으세요.
-          </p>
-        </div>
+    <div className="min-h-screen bg-[var(--cream)]">
+      <header className="sticky top-0 z-50 border-b-3 border-black bg-white">
+        <div className="mx-auto flex h-16 max-w-5xl items-center justify-between px-4 lg:px-8">
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-lime-400">
+              <Sparkles size={20} />
+            </div>
+            <span className="text-xl font-black tracking-tight">UricAI</span>
+          </Link>
 
-        <nav className="neo-card p-4">
-          <p className="neo-caption mb-3 px-2">메뉴</p>
-          <ul className="space-y-2">
+          <nav className="hidden items-center gap-1 md:flex">
             {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
               const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
               return (
-                <li key={href}>
+                <Link
+                  key={href}
+                  href={href}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                    isActive
+                      ? 'border-2 border-black bg-lime-400 shadow-[2px_2px_0px_rgba(0,0,0,1)]'
+                      : 'hover:bg-slate-100'
+                  }`}
+                >
+                  <Icon size={18} />
+                  {label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <button 
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="neo-icon-btn md:hidden"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
+        {mobileMenuOpen && (
+          <nav className="border-t-2 border-black bg-white p-4 md:hidden">
+            <div className="flex flex-col gap-2">
+              {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+                const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+                return (
                   <Link
+                    key={href}
                     href={href}
-                    className={`flex items-center gap-3 rounded-xl px-4 py-3 font-semibold transition-all ${
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 font-semibold ${
                       isActive
-                        ? 'neo-nav-item-active'
+                        ? 'border-2 border-black bg-lime-400'
                         : 'hover:bg-slate-100'
                     }`}
                   >
-                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                    <Icon size={20} />
                     {label}
                   </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+                );
+              })}
+            </div>
+          </nav>
+        )}
+      </header>
 
-        <div className="neo-card-cyan p-5">
-          <p className="neo-caption mb-4">주요 기능</p>
-          <div className="space-y-3">
-            {FEATURES.map(({ icon: Icon, label, desc }) => (
-              <div 
-                key={label} 
-                className="flex items-center gap-3 rounded-xl border-2 border-black bg-white p-3"
-              >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
-                  <Icon size={18} />
-                </div>
-                <div>
-                  <p className="text-sm font-bold">{label}</p>
-                  <p className="text-xs text-slate-600">{desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </aside>
-
-      <main className="relative min-h-screen lg:min-h-0">
-        <div className="mx-auto min-h-screen max-w-[500px] lg:max-w-none lg:min-h-0">
-          <div className="neo-card-flat lg:min-h-[calc(100vh-64px)] lg:overflow-y-auto lg:bg-white">
-            {children}
-          </div>
-        </div>
+      <main className="mx-auto max-w-5xl px-4 py-6 lg:px-8 lg:py-10">
+        {children}
       </main>
 
-      <aside className="hidden lg:flex lg:flex-col lg:gap-6">
-        <div className="neo-card-dark p-6">
-          <div className="mb-4 flex items-center gap-2">
-            <Zap size={18} className="text-lime-400" />
-            <span className="neo-badge-lime">LIVE</span>
-          </div>
-          <p className="neo-caption text-slate-400">실시간 연동</p>
-          <div className="mt-3">
-            <span className="neo-stat-value text-white">24/7</span>
-          </div>
-          <p className="neo-body mt-4 text-slate-300">
-            Libre CGM과 연동하여 혈당 데이터를 자동으로 가져옵니다.
-          </p>
-        </div>
-
-        <div className="neo-card p-5">
-          <p className="neo-caption mb-4">빠른 액션</p>
-          <div className="space-y-3">
-            <Link href="/login" className="neo-btn neo-btn-primary w-full">
-              <Shield size={18} />
-              계정 연결
-            </Link>
-            <Link href="/record?tab=glucose" className="neo-btn neo-btn-cyan w-full">
-              <Activity size={18} />
-              Libre 업로드
-            </Link>
-            <Link href="/report" className="neo-btn neo-btn-secondary w-full">
-              <BarChart3 size={18} />
-              주간 리포트
-            </Link>
-          </div>
-        </div>
-
-        <div className="neo-card-orange p-5">
-          <div className="flex items-start gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-black bg-white">
-              <Smartphone size={24} />
+      <footer className="border-t-3 border-black bg-slate-900 py-8 text-white">
+        <div className="mx-auto max-w-5xl px-4 lg:px-8">
+          <div className="flex flex-col items-center justify-between gap-4 sm:flex-row">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg border-2 border-lime-400 bg-lime-400">
+                <Sparkles size={16} className="text-black" />
+              </div>
+              <span className="font-bold">UricAI</span>
             </div>
-            <div>
-              <p className="font-bold">모바일 앱</p>
-              <p className="mt-1 text-sm text-slate-800">
-                PWA로 홈 화면에 추가하여 네이티브 앱처럼 사용하세요.
-              </p>
-            </div>
+            <p className="text-sm text-slate-400">
+              가족 대사 건강을 함께 관리하는 AI 코치
+            </p>
           </div>
         </div>
-
-        <div className="neo-card-violet p-5 text-center">
-          <p className="neo-caption">투자자 여러분께</p>
-          <p className="neo-subtitle mt-2">
-            헬스케어의 미래,<br />UricAI와 함께
-          </p>
-          <div className="mt-4 flex justify-center gap-2">
-            <span className="neo-badge-dark">Series A</span>
-            <span className="neo-badge-lime">2024</span>
-          </div>
-        </div>
-      </aside>
+      </footer>
     </div>
   );
 }
