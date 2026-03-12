@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_KR } from 'next/font/google';
+import FirebaseBootstrap from '@/components/FirebaseBootstrap';
 import "./globals.css";
 
 const notoSansKr = Noto_Sans_KR({
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="ko">
       <body className={`${notoSansKr.variable} bg-[var(--bg)] text-[var(--text)] antialiased`}>
-        {children}
+        <FirebaseBootstrap>{children}</FirebaseBootstrap>
       </body>
     </html>
   );
