@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import { storage, GLP1Entry } from '@/lib/storage';
-import { Syringe, AlertCircle, TrendingDown } from 'lucide-react';
+import { Syringe, AlertCircle, TrendingDown, Check, Scale } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -76,22 +76,24 @@ export default function GLP1Page() {
     }));
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 max-w-[430px] mx-auto">
+    <div className="flex flex-col min-h-screen bg-neo-bg max-w-[430px] mx-auto">
       <Header title="GLP-1 트래커" showBack />
 
       <main className="flex-1 overflow-y-auto px-4 pb-8 space-y-4">
-        {/* Drug Selection */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">약물 선택</h3>
+        <div className="neo-card-cyan">
+          <h3 className="font-black mb-3 flex items-center gap-2">
+            <Syringe size={18} />
+            약물 선택
+          </h3>
           <div className="flex gap-2 flex-wrap">
             {drugs.map((drug) => (
               <button
                 key={drug}
                 onClick={() => setSelectedDrug(drug)}
-                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-xl text-sm font-bold border-3 border-black transition-all ${
                   selectedDrug === drug
-                    ? 'bg-teal-500 text-white'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-cyan-400 shadow-neo-sm -translate-y-0.5'
+                    : 'bg-white hover:bg-gray-100'
                 }`}
               >
                 {drug}
@@ -100,29 +102,27 @@ export default function GLP1Page() {
           </div>
         </div>
 
-        {/* Dose */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">투여량</h3>
-          <div className="flex items-center gap-2">
+        <div className="neo-card">
+          <h3 className="font-black mb-3">투여량</h3>
+          <div className="flex items-center gap-3">
             <input
               type="number"
               step="0.1"
               value={dose}
               onChange={(e) => setDose(Number(e.target.value))}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="flex-1 px-4 py-3 border-3 border-black rounded-xl text-sm font-bold focus:outline-none focus:shadow-neo transition-shadow"
             />
-            <span className="text-sm text-gray-500 font-medium">mg</span>
+            <span className="text-sm font-black px-4 py-3 bg-gray-200 rounded-xl border-2 border-black">mg</span>
           </div>
         </div>
 
-        {/* Injection Site */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-2">주사 부위</h3>
+        <div className="neo-card-violet">
+          <h3 className="font-black mb-2">주사 부위</h3>
           {lastSite && (
-            <p className="text-xs text-gray-400 mb-3">
-              마지막 부위: <span className="text-gray-600">{lastSite}</span>
-              {' / '}
-              권장 다음 부위: <span className="text-teal-600 font-medium">{suggestedSite}</span>
+            <p className="text-xs font-bold text-gray-600 mb-3">
+              마지막: <span className="text-gray-800">{lastSite}</span>
+              {' → '}
+              권장: <span className="text-violet-600">{suggestedSite}</span>
             </p>
           )}
           <div className="grid grid-cols-2 gap-2">
@@ -133,26 +133,25 @@ export default function GLP1Page() {
                 <button
                   key={site}
                   onClick={() => setSelectedSite(site)}
-                  className={`py-3 px-2 rounded-xl text-sm font-medium border-2 transition-colors ${
+                  className={`py-3 px-3 rounded-xl text-sm font-bold border-3 transition-all ${
                     isSelected
-                      ? 'border-teal-500 bg-teal-50 text-teal-700'
+                      ? 'border-black bg-violet-300 shadow-neo-sm -translate-y-0.5'
                       : isLast
-                      ? 'border-orange-300 bg-orange-50 text-orange-600'
-                      : 'border-gray-200 text-gray-600'
+                      ? 'border-orange-400 bg-orange-100'
+                      : 'border-black bg-white hover:bg-gray-50'
                   }`}
                 >
                   {site}
-                  {isLast && <span className="block text-[10px] mt-0.5">최근 사용</span>}
+                  {isLast && <span className="block text-[10px] font-bold mt-1 text-orange-600">최근 사용</span>}
                 </button>
               );
             })}
           </div>
         </div>
 
-        {/* Side Effects */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <AlertCircle size={14} className="text-yellow-500" />
+        <div className="neo-card-orange">
+          <h3 className="font-black mb-3 flex items-center gap-2">
+            <AlertCircle size={16} />
             부작용 체크
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -160,10 +159,10 @@ export default function GLP1Page() {
               <button
                 key={se}
                 onClick={() => toggleSideEffect(se)}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                className={`px-4 py-2 rounded-full text-xs font-bold border-2 transition-all ${
                   sideEffects.includes(se)
-                    ? 'bg-red-100 text-red-700 border border-red-300'
-                    : 'bg-gray-100 text-gray-600'
+                    ? 'bg-red-300 border-black shadow-neo-xs'
+                    : 'bg-white border-black hover:bg-gray-50'
                 }`}
               >
                 {se}
@@ -172,78 +171,85 @@ export default function GLP1Page() {
           </div>
         </div>
 
-        {/* Weight */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">체중 (선택)</h3>
-          <div className="flex items-center gap-2">
+        <div className="neo-card">
+          <h3 className="font-black mb-3 flex items-center gap-2">
+            <Scale size={16} />
+            체중 (선택)
+          </h3>
+          <div className="flex items-center gap-3">
             <input
               type="number"
               step="0.1"
               placeholder="체중 입력"
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-400"
+              className="flex-1 px-4 py-3 border-3 border-black rounded-xl text-sm font-bold focus:outline-none focus:shadow-neo transition-shadow"
             />
-            <span className="text-sm text-gray-500 font-medium">kg</span>
+            <span className="text-sm font-black px-4 py-3 bg-gray-200 rounded-xl border-2 border-black">kg</span>
           </div>
         </div>
 
-        {/* Save */}
         <button
           onClick={handleSave}
-          className="w-full py-3 bg-teal-500 text-white rounded-2xl font-semibold flex items-center justify-center gap-2"
+          className="neo-btn-primary w-full py-4 text-base flex items-center justify-center gap-2"
         >
-          <Syringe size={18} />
+          <Syringe size={20} />
           기록 저장
         </button>
 
-        {/* Correlation Chart */}
         {chartData.length >= 2 && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-              <TrendingDown size={14} className="text-blue-500" />
+          <div className="neo-card-lime">
+            <h3 className="font-black mb-3 flex items-center gap-2">
+              <TrendingDown size={16} />
               체중 &amp; 용량 추이
             </h3>
-            <ResponsiveContainer width="100%" height={200}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis yAxisId="left" tick={{ fontSize: 11 }} domain={['dataMin - 1', 'dataMax + 1']} />
-                <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Legend wrapperStyle={{ fontSize: 12 }} />
-                <Line yAxisId="left" type="monotone" dataKey="체중" stroke="#14b8a6" strokeWidth={2} dot={{ r: 3 }} />
-                <Line yAxisId="right" type="monotone" dataKey="용량" stroke="#6366f1" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="bg-white rounded-xl border-2 border-black p-2">
+              <ResponsiveContainer width="100%" height={200}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} />
+                  <YAxis yAxisId="left" tick={{ fontSize: 11, fontWeight: 600 }} domain={['dataMin - 1', 'dataMax + 1']} />
+                  <YAxis yAxisId="right" orientation="right" tick={{ fontSize: 11, fontWeight: 600 }} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      border: '2px solid black', 
+                      borderRadius: '8px',
+                      fontWeight: 600 
+                    }} 
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12, fontWeight: 700 }} />
+                  <Line yAxisId="left" type="monotone" dataKey="체중" stroke="#000" strokeWidth={3} dot={{ r: 4, fill: '#a3e635', stroke: '#000', strokeWidth: 2 }} />
+                  <Line yAxisId="right" type="monotone" dataKey="용량" stroke="#000" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 4, fill: '#c4b5fd', stroke: '#000', strokeWidth: 2 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
-        {/* History */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">투여 이력</h3>
+        <div className="neo-card">
+          <h3 className="font-black mb-3">투여 이력</h3>
           {entries.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">아직 기록이 없습니다</p>
+            <p className="text-sm font-bold text-gray-400 text-center py-6">아직 기록이 없습니다</p>
           ) : (
             <div className="space-y-3">
               {[...entries].reverse().slice(0, 10).map((entry) => (
-                <div key={entry.id} className="border border-gray-100 rounded-xl p-3">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm font-medium">{entry.drug} {entry.dose}{entry.unit}</span>
-                    <span className="text-xs text-gray-400">{entry.date}</span>
+                <div key={entry.id} className="bg-gray-100 border-2 border-black rounded-xl p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="font-black">{entry.drug} {entry.dose}{entry.unit}</span>
+                    <span className="text-xs font-bold text-gray-500 bg-white px-2 py-1 rounded-lg border border-black">{entry.date}</span>
                   </div>
-                  <p className="text-xs text-gray-500">부위: {entry.site}</p>
+                  <p className="text-xs font-bold text-gray-600">부위: {entry.site}</p>
                   {entry.sideEffects.length > 0 && (
-                    <div className="flex gap-1 mt-1 flex-wrap">
+                    <div className="flex gap-1 mt-2 flex-wrap">
                       {entry.sideEffects.map((se) => (
-                        <span key={se} className="text-[10px] bg-red-50 text-red-600 px-2 py-0.5 rounded-full">
+                        <span key={se} className="text-[10px] font-bold bg-red-200 text-red-700 px-2 py-1 rounded-full border border-red-400">
                           {se}
                         </span>
                       ))}
                     </div>
                   )}
                   {entry.weight && (
-                    <p className="text-xs text-gray-500 mt-1">체중: {entry.weight}kg</p>
+                    <p className="text-xs font-bold text-gray-600 mt-2">체중: {entry.weight}kg</p>
                   )}
                 </div>
               ))}

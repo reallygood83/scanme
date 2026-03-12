@@ -1,21 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { storage } from '@/lib/storage';
+import { Check, ChevronLeft, ChevronRight, Sparkles, Crown, Users, Zap } from 'lucide-react';
 
 const CONDITIONS = [
-  { id: 'gout', label: '통풍/요산 관리', emoji: '🦴' },
-  { id: 'glucose', label: '혈당/당뇨 관리', emoji: '🩸' },
-  { id: 'diet', label: '다이어트/체중 관리', emoji: '⚖️' },
-  { id: 'glp1', label: 'GLP-1 약물 관리', emoji: '💉' },
-  { id: 'family', label: '가족 건강 관리', emoji: '👨‍👩‍👧‍👦' },
+  { id: 'gout', label: '통풍/요산 관리', emoji: '🦴', color: 'bg-orange-200' },
+  { id: 'glucose', label: '혈당/당뇨 관리', emoji: '🩸', color: 'bg-red-200' },
+  { id: 'diet', label: '다이어트/체중 관리', emoji: '⚖️', color: 'bg-lime-200' },
+  { id: 'glp1', label: 'GLP-1 약물 관리', emoji: '💉', color: 'bg-cyan-200' },
+  { id: 'family', label: '가족 건강 관리', emoji: '👨‍👩‍👧‍👦', color: 'bg-violet-200' },
 ];
 
-const PLAN_FEATURES: Record<string, { name: string; price: string; features: string[] }> = {
+const PLAN_FEATURES: Record<string, { name: string; price: string; features: string[]; icon: typeof Zap; color: string }> = {
   free: {
     name: 'Free 플랜',
     price: '무료',
+    icon: Zap,
+    color: 'bg-gray-200',
     features: [
       '기본 요산/혈당 기록',
       '주간 리포트',
@@ -26,6 +29,8 @@ const PLAN_FEATURES: Record<string, { name: string; price: string; features: str
   pro: {
     name: 'Pro 플랜',
     price: '₩9,900/월',
+    icon: Crown,
+    color: 'bg-violet-300',
     features: [
       '무제한 요산/혈당/식단 기록',
       '실시간 AI 맞춤 분석',
@@ -38,6 +43,8 @@ const PLAN_FEATURES: Record<string, { name: string; price: string; features: str
   family: {
     name: 'Family 플랜',
     price: '₩14,900/월',
+    icon: Users,
+    color: 'bg-cyan-300',
     features: [
       'Pro 플랜의 모든 기능',
       '가족 구성원 최대 5명 관리',
@@ -55,16 +62,12 @@ export default function OnboardingPage() {
   const [transitioning, setTransitioning] = useState(false);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
 
-  // Step 1 state
   const [selectedConditions, setSelectedConditions] = useState<string[]>([]);
-
-  // Step 2 state
   const [goutDiagnosed, setGoutDiagnosed] = useState(false);
   const [useCGM, setUseCGM] = useState(false);
   const [useGLP1, setUseGLP1] = useState(false);
   const [familyHistory, setFamilyHistory] = useState(false);
 
-  // Derived plan
   const recommendedPlan = selectedConditions.includes('family')
     ? 'family'
     : selectedConditions.length >= 3
@@ -111,43 +114,40 @@ export default function OnboardingPage() {
     router.push('/');
   };
 
-  const canProceed =
-    step === 1 ? selectedConditions.length > 0 : true;
+  const canProceed = step === 1 ? selectedConditions.length > 0 : true;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      {/* Progress Bar */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-100 px-4 pt-4 pb-3">
+    <div className="min-h-screen bg-neo-bg flex flex-col">
+      <div className="sticky top-0 z-10 bg-white border-b-3 border-black px-4 pt-4 pb-3">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-2">
             {[1, 2, 3, 4].map((s) => (
               <div key={s} className="flex items-center flex-1">
                 <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all duration-300 ${
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black border-3 border-black transition-all duration-300 ${
                     s <= step
-                      ? 'bg-[#3B82F6] text-white'
-                      : 'bg-gray-200 text-gray-400'
+                      ? 'bg-lime-400 shadow-neo-xs'
+                      : 'bg-gray-200'
                   }`}
                 >
-                  {s < step ? '✓' : s}
+                  {s < step ? <Check size={18} strokeWidth={3} /> : s}
                 </div>
                 {s < 4 && (
                   <div
-                    className={`flex-1 h-1 mx-1 rounded transition-all duration-300 ${
-                      s < step ? 'bg-[#3B82F6]' : 'bg-gray-200'
+                    className={`flex-1 h-2 mx-1 rounded border-2 border-black transition-all duration-300 ${
+                      s < step ? 'bg-lime-400' : 'bg-gray-200'
                     }`}
                   />
                 )}
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 text-center">
+          <p className="text-xs font-black text-gray-500 text-center">
             {step} / 4 단계
           </p>
         </div>
       </div>
 
-      {/* Content Area */}
       <div className="flex-1 overflow-hidden">
         <div
           className={`max-w-md mx-auto px-4 py-6 transition-all duration-200 ${
@@ -176,14 +176,14 @@ export default function OnboardingPage() {
         </div>
       </div>
 
-      {/* Bottom Buttons */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-100 px-4 py-4">
+      <div className="sticky bottom-0 bg-white border-t-3 border-black px-4 py-4">
         <div className="max-w-md mx-auto flex gap-3">
           {step > 1 && (
             <button
               onClick={handleBack}
-              className="flex-1 py-3 rounded-2xl border border-gray-200 text-gray-600 font-medium text-sm hover:bg-gray-50 transition-colors"
+              className="flex-1 py-4 rounded-xl border-3 border-black bg-white font-black text-sm hover:bg-gray-100 shadow-neo-sm hover:shadow-neo transition-all flex items-center justify-center gap-2"
             >
+              <ChevronLeft size={18} />
               이전
             </button>
           )}
@@ -191,20 +191,22 @@ export default function OnboardingPage() {
             <button
               onClick={handleNext}
               disabled={!canProceed}
-              className={`flex-1 py-3 rounded-2xl font-medium text-sm transition-all ${
+              className={`flex-1 py-4 rounded-xl border-3 border-black font-black text-sm transition-all flex items-center justify-center gap-2 ${
                 canProceed
-                  ? 'bg-[#3B82F6] text-white hover:bg-blue-600 shadow-sm'
+                  ? 'bg-lime-400 shadow-neo-sm hover:shadow-neo hover:-translate-y-0.5'
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
               다음
+              <ChevronRight size={18} />
             </button>
           ) : (
             <button
               onClick={handleFinish}
-              className="flex-1 py-3 rounded-2xl bg-[#14B8A6] text-white font-semibold text-sm hover:bg-teal-600 shadow-sm transition-all"
+              className="flex-1 py-4 rounded-xl border-3 border-black bg-violet-400 font-black text-sm shadow-neo hover:-translate-y-1 transition-all flex items-center justify-center gap-2"
             >
-              시작하기 🎉
+              <Sparkles size={18} />
+              시작하기
             </button>
           )}
         </div>
@@ -213,7 +215,6 @@ export default function OnboardingPage() {
   );
 }
 
-/* ────────────────────────────────────────── Step 1 ── */
 function Step1({
   selected,
   onToggle,
@@ -223,10 +224,10 @@ function Step1({
 }) {
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 mb-1">
+      <h2 className="text-2xl font-black text-gray-900 mb-2">
         어떤 관리가 필요하세요?
       </h2>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm font-bold text-gray-500 mb-6">
         해당하는 항목을 모두 선택해주세요.
       </p>
 
@@ -237,44 +238,20 @@ function Step1({
             <button
               key={c.id}
               onClick={() => onToggle(c.id)}
-              className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all text-left shadow-sm ${
+              className={`flex items-center gap-4 p-4 rounded-xl border-3 border-black transition-all text-left ${
                 isSelected
-                  ? 'border-[#3B82F6] bg-blue-50'
-                  : 'border-gray-100 bg-white hover:border-gray-200'
+                  ? `${c.color} shadow-neo -translate-y-1`
+                  : 'bg-white shadow-neo-sm hover:shadow-neo hover:-translate-y-0.5'
               }`}
             >
               <span className="text-3xl">{c.emoji}</span>
-              <span
-                className={`font-medium text-sm ${
-                  isSelected ? 'text-[#3B82F6]' : 'text-gray-700'
+              <span className="font-black text-sm flex-1">{c.label}</span>
+              <div
+                className={`w-7 h-7 rounded-lg border-3 border-black flex items-center justify-center transition-all ${
+                  isSelected ? 'bg-lime-400' : 'bg-white'
                 }`}
               >
-                {c.label}
-              </span>
-              <div className="ml-auto">
-                <div
-                  className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                    isSelected
-                      ? 'bg-[#3B82F6] border-[#3B82F6]'
-                      : 'border-gray-300'
-                  }`}
-                >
-                  {isSelected && (
-                    <svg
-                      className="w-4 h-4 text-white"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={3}
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M5 13l4 4L19 7"
-                      />
-                    </svg>
-                  )}
-                </div>
+                {isSelected && <Check size={16} strokeWidth={3} />}
               </div>
             </button>
           );
@@ -284,7 +261,6 @@ function Step1({
   );
 }
 
-/* ────────────────────────────────────────── Step 2 ── */
 function ToggleRow({
   label,
   value,
@@ -295,25 +271,25 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
-      <span className="text-sm font-medium text-gray-700 pr-4">{label}</span>
+    <div className="neo-card flex items-center justify-between gap-4">
+      <span className="text-sm font-black text-gray-700 flex-1">{label}</span>
       <div className="flex gap-2 shrink-0">
         <button
           onClick={() => onChange(true)}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+          className={`px-5 py-2 rounded-xl text-sm font-black border-3 border-black transition-all ${
             value
-              ? 'bg-[#3B82F6] text-white'
-              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+              ? 'bg-lime-400 shadow-neo-sm -translate-y-0.5'
+              : 'bg-white hover:bg-gray-100'
           }`}
         >
           예
         </button>
         <button
           onClick={() => onChange(false)}
-          className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${
+          className={`px-5 py-2 rounded-xl text-sm font-black border-3 border-black transition-all ${
             !value
-              ? 'bg-[#3B82F6] text-white'
-              : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+              ? 'bg-orange-300 shadow-neo-sm -translate-y-0.5'
+              : 'bg-white hover:bg-gray-100'
           }`}
         >
           아니오
@@ -344,10 +320,10 @@ function Step2({
 }) {
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 mb-1">
+      <h2 className="text-2xl font-black text-gray-900 mb-2">
         현재 상태를 알려주세요
       </h2>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm font-bold text-gray-500 mb-6">
         더 정확한 맞춤 관리를 위해 알려주세요.
       </p>
 
@@ -377,72 +353,48 @@ function Step2({
   );
 }
 
-/* ────────────────────────────────────────── Step 3 ── */
 function Step3({
   plan,
   recommendedPlan,
 }: {
-  plan: { name: string; price: string; features: string[] };
+  plan: { name: string; price: string; features: string[]; icon: typeof Zap; color: string };
   recommendedPlan: string;
 }) {
-  const accentColor =
-    recommendedPlan === 'family'
-      ? '#14B8A6'
-      : recommendedPlan === 'pro'
-        ? '#3B82F6'
-        : '#6B7280';
+  const Icon = plan.icon;
 
   return (
     <div>
-      <h2 className="text-xl font-bold text-gray-900 mb-1">
+      <h2 className="text-2xl font-black text-gray-900 mb-2">
         맞춤 플랜 추천
       </h2>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm font-bold text-gray-500 mb-6">
         선택하신 항목을 기반으로 최적의 플랜을 추천드려요.
       </p>
 
-      <div
-        className="rounded-2xl border-2 p-6 shadow-sm bg-white"
-        style={{ borderColor: accentColor }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <span
-              className="text-xs font-semibold px-2 py-1 rounded-full text-white"
-              style={{ backgroundColor: accentColor }}
-            >
-              추천
-            </span>
-            <h3 className="text-lg font-bold text-gray-900 mt-2">
-              {plan.name}
-            </h3>
+      <div className={`neo-card ${plan.color} relative overflow-visible`}>
+        <span className="absolute -top-3 left-4 neo-badge-violet shadow-neo-xs">
+          <Sparkles size={12} className="inline mr-1" />
+          추천
+        </span>
+        
+        <div className="flex items-start gap-4 mb-4 mt-2">
+          <div className="w-14 h-14 rounded-xl bg-white border-3 border-black flex items-center justify-center shadow-neo-sm">
+            <Icon size={28} />
           </div>
-          <div className="text-right">
-            <p className="text-xl font-bold" style={{ color: accentColor }}>
-              {plan.price}
-            </p>
+          <div>
+            <h3 className="text-xl font-black">{plan.name}</h3>
+            <p className="text-2xl font-black text-violet-600 mt-1">{plan.price}</p>
           </div>
         </div>
 
-        <hr className="border-gray-100 mb-4" />
+        <hr className="border-2 border-black mb-4" />
 
         <ul className="space-y-3">
           {plan.features.map((f, i) => (
-            <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-              <svg
-                className="w-5 h-5 shrink-0 mt-0.5"
-                style={{ color: accentColor }}
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+            <li key={i} className="flex items-start gap-3 text-sm font-bold">
+              <div className="w-6 h-6 rounded-lg bg-lime-400 border-2 border-black flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Check size={14} strokeWidth={3} />
+              </div>
               {f}
             </li>
           ))}
@@ -450,7 +402,7 @@ function Step3({
       </div>
 
       {recommendedPlan !== 'free' && (
-        <p className="text-xs text-gray-400 text-center mt-4">
+        <p className="text-xs font-bold text-gray-400 text-center mt-4">
           7일 무료 체험 후 결제가 시작됩니다. 언제든 취소 가능합니다.
         </p>
       )}
@@ -458,22 +410,22 @@ function Step3({
   );
 }
 
-/* ────────────────────────────────────────── Step 4 ── */
 function ConfettiDots() {
+  const colors = ['#a3e635', '#22d3ee', '#f97316', '#c4b5fd', '#fbbf24', '#fb7185'];
+  
   return (
     <div className="relative w-full h-32 overflow-hidden">
       {Array.from({ length: 20 }).map((_, i) => {
-        const colors = ['#3B82F6', '#14B8A6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
         const color = colors[i % colors.length];
         const left = `${5 + (i * 17) % 90}%`;
         const delay = `${(i * 0.15) % 2}s`;
         const duration = `${1.5 + (i % 3) * 0.5}s`;
-        const size = 6 + (i % 4) * 2;
+        const size = 8 + (i % 4) * 3;
 
         return (
           <span
             key={i}
-            className="absolute rounded-full animate-confetti-fall"
+            className="absolute rounded-lg border-2 border-black animate-confetti-fall"
             style={{
               width: size,
               height: size,
@@ -512,30 +464,30 @@ function Step4() {
     <div className="flex flex-col items-center text-center">
       <ConfettiDots />
 
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">
+      <h2 className="text-3xl font-black text-gray-900 mb-3">
         7일 무료 체험 시작!
       </h2>
-      <p className="text-sm text-gray-500 mb-2 leading-relaxed">
+      <p className="text-sm font-bold text-gray-500 mb-2 leading-relaxed">
         모든 준비가 완료되었어요.
         <br />
         지금부터 UricAI가 건강 관리를 도와드릴게요.
       </p>
-      <p className="text-xs text-gray-400 mb-6">
+      <p className="text-xs font-bold text-gray-400 mb-6">
         매일 기록하면 더 정확한 AI 분석을 받을 수 있어요.
       </p>
 
       <div className="grid grid-cols-3 gap-3 w-full mb-4">
         {[
-          { emoji: '📊', text: '맞춤 분석' },
-          { emoji: '🍽️', text: '식단 관리' },
-          { emoji: '🤖', text: 'AI 상담' },
+          { emoji: '📊', text: '맞춤 분석', color: 'bg-lime-200' },
+          { emoji: '🍽️', text: '식단 관리', color: 'bg-orange-200' },
+          { emoji: '🤖', text: 'AI 상담', color: 'bg-violet-200' },
         ].map((item) => (
           <div
             key={item.text}
-            className="bg-white rounded-2xl border border-gray-100 p-3 shadow-sm"
+            className={`neo-card ${item.color} p-4`}
           >
-            <span className="text-2xl">{item.emoji}</span>
-            <p className="text-xs text-gray-600 mt-1 font-medium">
+            <span className="text-3xl">{item.emoji}</span>
+            <p className="text-xs font-black mt-2">
               {item.text}
             </p>
           </div>

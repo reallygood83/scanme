@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Brain, Send, Sparkles } from 'lucide-react';
+import { Brain, Send, Sparkles, Bot, User } from 'lucide-react';
 import BottomNav from '@/components/BottomNav';
 import { storage } from '@/lib/storage';
 import { getChatResponse } from '@/lib/mockAI';
@@ -83,52 +83,65 @@ export default function CoachPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-neo-bg">
       {/* Header */}
-      <header className="flex items-center justify-center gap-2 h-14 px-4 bg-white border-b border-gray-100">
-        <Brain size={24} className="text-purple-500" />
-        <h1 className="text-lg font-semibold">AI 건강 코치</h1>
+      <header className="neo-card-violet flex items-center justify-center gap-3 h-16 mx-4 mt-4">
+        <div className="w-10 h-10 rounded-full bg-violet-400 border-3 border-black flex items-center justify-center">
+          <Brain size={20} className="text-black" />
+        </div>
+        <h1 className="text-lg font-black">AI 건강 코치</h1>
       </header>
 
       {/* Chat Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 pb-48 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 pb-52 space-y-4">
         {messages.map((msg, i) => (
           <div
             key={i}
             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
           >
-            <div
-              className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                msg.role === 'user'
-                  ? 'bg-blue-500 text-white rounded-br-md'
-                  : 'bg-gray-100 text-gray-800 rounded-bl-md'
-              }`}
-            >
-              {msg.role === 'ai' && (
-                <div className="flex items-center gap-1 mb-1">
-                  <Sparkles size={14} className="text-purple-500" />
-                  <span className="text-xs font-medium text-purple-500">UricAI 코치</span>
-                </div>
-              )}
-              <p className="whitespace-pre-wrap">{msg.content}</p>
-              <p
-                className={`text-[10px] mt-1 ${
-                  msg.role === 'user' ? 'text-blue-100' : 'text-gray-400'
+            <div className={`flex gap-2 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+              {/* Avatar */}
+              <div className={`w-8 h-8 rounded-full border-2 border-black flex items-center justify-center flex-shrink-0 ${
+                msg.role === 'user' ? 'bg-cyan-300' : 'bg-violet-300'
+              }`}>
+                {msg.role === 'user' ? <User size={14} /> : <Bot size={14} />}
+              </div>
+              
+              {/* Message Bubble */}
+              <div
+                className={`rounded-xl px-4 py-3 text-sm leading-relaxed border-3 border-black ${
+                  msg.role === 'user'
+                    ? 'bg-cyan-300 shadow-neo-sm'
+                    : 'bg-white shadow-neo-sm'
                 }`}
               >
-                {msg.time}
-              </p>
+                {msg.role === 'ai' && (
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <Sparkles size={14} className="text-violet-600" />
+                    <span className="text-xs font-bold text-violet-600">UricAI 코치</span>
+                  </div>
+                )}
+                <p className="whitespace-pre-wrap font-medium">{msg.content}</p>
+                <p className="text-[10px] mt-2 text-gray-500 font-medium">
+                  {msg.time}
+                </p>
+              </div>
             </div>
           </div>
         ))}
 
         {isTyping && (
           <div className="flex justify-start">
-            <div className="bg-gray-100 rounded-2xl rounded-bl-md px-4 py-3 text-sm text-gray-500">
-              <div className="flex items-center gap-1">
-                <span className="animate-bounce" style={{ animationDelay: '0ms' }}>.</span>
-                <span className="animate-bounce" style={{ animationDelay: '150ms' }}>.</span>
-                <span className="animate-bounce" style={{ animationDelay: '300ms' }}>.</span>
+            <div className="flex gap-2">
+              <div className="w-8 h-8 rounded-full border-2 border-black bg-violet-300 flex items-center justify-center">
+                <Bot size={14} />
+              </div>
+              <div className="bg-white border-3 border-black rounded-xl px-4 py-3 shadow-neo-sm">
+                <div className="flex items-center gap-1 text-lg">
+                  <span className="animate-bounce" style={{ animationDelay: '0ms' }}>•</span>
+                  <span className="animate-bounce" style={{ animationDelay: '150ms' }}>•</span>
+                  <span className="animate-bounce" style={{ animationDelay: '300ms' }}>•</span>
+                </div>
               </div>
             </div>
           </div>
@@ -136,15 +149,15 @@ export default function CoachPage() {
       </div>
 
       {/* Quick Suggestion Chips + Input Bar — fixed above BottomNav */}
-      <div className="fixed bottom-14 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-100 z-40">
+      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-neo-bg border-t-3 border-black z-40">
         {/* Quick Chips */}
-        <div className="flex gap-2 px-4 py-2 overflow-x-auto scrollbar-hide">
+        <div className="flex gap-2 px-4 py-3 overflow-x-auto scrollbar-hide">
           {quickChips.map((chip) => (
             <button
               key={chip}
               type="button"
               onClick={() => handleChipClick(chip)}
-              className="flex-shrink-0 px-3 py-1.5 bg-purple-50 text-purple-600 text-xs rounded-full border border-purple-200 hover:bg-purple-100 transition-colors"
+              className="flex-shrink-0 px-4 py-2 bg-violet-200 text-black text-xs font-bold rounded-full border-2 border-black shadow-neo-xs hover:bg-violet-300 hover:-translate-y-0.5 transition-all"
             >
               {chip}
             </button>
@@ -152,20 +165,20 @@ export default function CoachPage() {
         </div>
 
         {/* Input Bar */}
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 px-4 pb-2">
+        <form onSubmit={handleSubmit} className="flex items-center gap-3 px-4 pb-3">
           <input
             ref={inputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="건강에 대해 물어보세요..."
-            className="flex-1 h-10 px-4 bg-gray-100 rounded-full text-sm outline-none focus:ring-2 focus:ring-blue-300"
+            className="flex-1 h-12 px-4 bg-white rounded-xl text-sm font-medium border-3 border-black shadow-neo-sm outline-none focus:shadow-neo transition-shadow"
             disabled={isTyping}
           />
           <button
             type="submit"
             disabled={!input.trim() || isTyping}
-            className="w-10 h-10 flex items-center justify-center bg-blue-500 text-white rounded-full disabled:opacity-40 hover:bg-blue-600 transition-colors"
+            className="w-12 h-12 flex items-center justify-center bg-lime-400 text-black rounded-xl border-3 border-black shadow-neo-sm disabled:opacity-40 hover:bg-lime-300 hover:-translate-y-0.5 hover:shadow-neo active:translate-y-0.5 active:shadow-neo-xs transition-all"
           >
             <Send size={18} />
           </button>

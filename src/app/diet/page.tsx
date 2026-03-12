@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Header from '@/components/Header';
 import { storage } from '@/lib/storage';
-import { Flame, Timer, Utensils, TrendingDown } from 'lucide-react';
+import { Flame, Timer, Utensils, TrendingDown, Apple, Beef, Droplet } from 'lucide-react';
 import {
   ResponsiveContainer,
   LineChart,
@@ -26,6 +26,7 @@ const mealSuggestions = [
     carbs: 12,
     fat: 16,
     desc: '고단백 저퓨린 메뉴',
+    color: 'bg-lime-200',
   },
   {
     name: '연어 샐러드',
@@ -34,6 +35,7 @@ const mealSuggestions = [
     carbs: 15,
     fat: 18,
     desc: '오메가3 풍부',
+    color: 'bg-cyan-200',
   },
   {
     name: '퀴노아 볼',
@@ -42,6 +44,7 @@ const mealSuggestions = [
     carbs: 48,
     fat: 10,
     desc: '완전 단백질 곡물',
+    color: 'bg-orange-200',
   },
 ];
 
@@ -58,7 +61,6 @@ export default function DietPage() {
     setFastingStart(storage.getFastingStart());
   }, []);
 
-  // Timer tick
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(Date.now());
@@ -106,100 +108,121 @@ export default function DietPage() {
 
   const remaining = FASTING_MS - elapsed;
 
-  // Weight chart
   const chartData = weightData.slice(-7).map((w) => ({
     date: w.date.slice(5),
     체중: w.value,
   }));
 
-  const macroBar = (label: string, value: number, color: string) => {
-    const pct = totalMacro > 0 ? Math.round((value / totalMacro) * 100) : 0;
-    return (
-      <div key={label} className="flex items-center gap-2">
-        <span className="text-xs text-gray-500 w-10">{label}</span>
-        <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
-        </div>
-        <span className="text-xs text-gray-600 w-16 text-right">{value}g ({pct}%)</span>
-      </div>
-    );
-  };
+  const caloriePercent = Math.min((totalCalories / TARGET_CALORIES) * 100, 100);
+  const isOverCalorie = totalCalories > TARGET_CALORIES;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 max-w-[430px] mx-auto">
+    <div className="flex flex-col min-h-screen bg-neo-bg max-w-[430px] mx-auto">
       <Header title="다이어트 코치" showBack />
 
       <main className="flex-1 overflow-y-auto px-4 pb-8 space-y-4">
-        {/* Today's Summary */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <Flame size={16} className="text-orange-500" />
-            오늘의 칼로리
-          </h3>
-          <div className="flex items-end gap-2 mb-3">
-            <span className="text-3xl font-bold text-gray-800">{totalCalories}</span>
-            <span className="text-sm text-gray-400 mb-1">/ {TARGET_CALORIES} kcal</span>
+        <div className="neo-card-orange">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-orange-400 border-2 border-black flex items-center justify-center">
+              <Flame size={16} />
+            </div>
+            <h3 className="font-black">오늘의 칼로리</h3>
           </div>
-          <div className="w-full h-3 bg-gray-100 rounded-full overflow-hidden mb-4">
+          
+          <div className="flex items-baseline gap-2 mb-4">
+            <span className={`text-4xl font-black ${isOverCalorie ? 'text-red-600' : 'text-gray-900'}`}>
+              {totalCalories}
+            </span>
+            <span className="text-sm font-bold text-gray-500">/ {TARGET_CALORIES} kcal</span>
+          </div>
+          
+          <div className="w-full h-4 bg-white rounded-lg border-3 border-black overflow-hidden mb-6">
             <div
-              className={`h-full rounded-full transition-all ${
-                totalCalories > TARGET_CALORIES ? 'bg-red-400' : 'bg-blue-400'
-              }`}
-              style={{ width: `${Math.min((totalCalories / TARGET_CALORIES) * 100, 100)}%` }}
+              className={`h-full transition-all ${isOverCalorie ? 'bg-red-400' : 'bg-lime-400'}`}
+              style={{ width: `${caloriePercent}%` }}
             />
           </div>
-          <div className="space-y-2">
-            {macroBar('단백질', totalProtein, 'bg-blue-400')}
-            {macroBar('탄수화물', totalCarbs, 'bg-yellow-400')}
-            {macroBar('지방', totalFat, 'bg-red-400')}
+          
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-cyan-200 rounded-xl p-3 border-2 border-black text-center">
+              <Beef size={16} className="mx-auto mb-1" />
+              <p className="text-xs font-bold text-gray-600">단백질</p>
+              <p className="text-lg font-black">{totalProtein}g</p>
+            </div>
+            <div className="bg-yellow-200 rounded-xl p-3 border-2 border-black text-center">
+              <Apple size={16} className="mx-auto mb-1" />
+              <p className="text-xs font-bold text-gray-600">탄수화물</p>
+              <p className="text-lg font-black">{totalCarbs}g</p>
+            </div>
+            <div className="bg-pink-200 rounded-xl p-3 border-2 border-black text-center">
+              <Droplet size={16} className="mx-auto mb-1" />
+              <p className="text-xs font-bold text-gray-600">지방</p>
+              <p className="text-lg font-black">{totalFat}g</p>
+            </div>
           </div>
         </div>
 
-        {/* Weight Trend */}
         {chartData.length >= 2 && (
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-              <TrendingDown size={16} className="text-green-500" />
-              체중 변화 (최근 7일)
-            </h3>
-            <ResponsiveContainer width="100%" height={180}>
-              <LineChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} domain={['dataMin - 0.5', 'dataMax + 0.5']} />
-                <Tooltip />
-                <Line type="monotone" dataKey="체중" stroke="#14b8a6" strokeWidth={2} dot={{ r: 3 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="neo-card">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-lime-400 border-2 border-black flex items-center justify-center">
+                <TrendingDown size={16} />
+              </div>
+              <h3 className="font-black">체중 변화 (최근 7일)</h3>
+            </div>
+            <div className="bg-white rounded-xl border-2 border-black p-2">
+              <ResponsiveContainer width="100%" height={180}>
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
+                  <XAxis dataKey="date" tick={{ fontSize: 11, fontWeight: 600 }} />
+                  <YAxis tick={{ fontSize: 11, fontWeight: 600 }} domain={['dataMin - 0.5', 'dataMax + 0.5']} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      border: '2px solid black', 
+                      borderRadius: '8px',
+                      fontWeight: 600 
+                    }} 
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="체중" 
+                    stroke="#000" 
+                    strokeWidth={3} 
+                    dot={{ r: 5, fill: '#a3e635', stroke: '#000', strokeWidth: 2 }} 
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         )}
 
-        {/* Intermittent Fasting Timer */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <Timer size={16} className="text-purple-500" />
-            간헐적 단식 (16:8)
-          </h3>
+        <div className="neo-card-violet">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-8 h-8 rounded-lg bg-violet-400 border-2 border-black flex items-center justify-center">
+              <Timer size={16} />
+            </div>
+            <h3 className="font-black">간헐적 단식 (16:8)</h3>
+          </div>
 
           <div className="text-center mb-4">
             <span
-              className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+              className={`neo-badge ${
                 isFasting
                   ? fastingComplete
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-orange-100 text-orange-700'
-                  : 'bg-gray-100 text-gray-500'
+                    ? 'neo-badge-lime'
+                    : 'neo-badge-orange'
+                  : ''
               }`}
             >
-              {isFasting ? (fastingComplete ? '식사 가능' : '단식 중') : '대기 중'}
+              {isFasting ? (fastingComplete ? '✓ 식사 가능' : '⏱ 단식 중') : '대기 중'}
             </span>
           </div>
 
-          <div className="text-center mb-3">
-            <p className="text-4xl font-mono font-bold text-gray-800">
+          <div className="text-center mb-4">
+            <p className="text-5xl font-black font-mono tracking-wider">
               {isFasting ? formatTime(fastingComplete ? elapsed : remaining) : '00:00:00'}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs font-bold text-gray-500 mt-2">
               {isFasting
                 ? fastingComplete
                   ? '단식 완료 - 경과 시간'
@@ -209,9 +232,9 @@ export default function DietPage() {
           </div>
 
           {isFasting && (
-            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden mb-4">
+            <div className="w-full h-3 bg-white rounded-lg border-2 border-black overflow-hidden mb-4">
               <div
-                className="h-full bg-purple-500 rounded-full transition-all"
+                className="h-full bg-violet-400 transition-all"
                 style={{ width: `${fastingProgress}%` }}
               />
             </div>
@@ -219,31 +242,32 @@ export default function DietPage() {
 
           <button
             onClick={toggleFasting}
-            className={`w-full py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+            className={`w-full py-3 rounded-xl text-sm font-black border-3 border-black transition-all ${
               isFasting
-                ? 'bg-red-100 text-red-600'
-                : 'bg-purple-500 text-white'
+                ? 'bg-red-300 hover:bg-red-400 shadow-neo-sm hover:shadow-neo'
+                : 'bg-violet-400 hover:bg-violet-300 shadow-neo-sm hover:shadow-neo'
             }`}
           >
             {isFasting ? '단식 종료' : '단식 시작'}
           </button>
         </div>
 
-        {/* Meal Suggestions */}
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1 px-1">
-            <Utensils size={16} className="text-blue-500" />
-            추천 식단
-          </h3>
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <div className="w-8 h-8 rounded-lg bg-cyan-300 border-2 border-black flex items-center justify-center">
+              <Utensils size={16} />
+            </div>
+            <h3 className="font-black">추천 식단</h3>
+          </div>
           <div className="space-y-3">
             {mealSuggestions.map((meal) => (
-              <div key={meal.name} className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-1">
-                  <h4 className="font-semibold text-sm">{meal.name}</h4>
-                  <span className="text-xs text-gray-400">{meal.calories} kcal</span>
+              <div key={meal.name} className={`neo-card ${meal.color} hover:-translate-y-1 transition-transform cursor-pointer`}>
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-black text-base">{meal.name}</h4>
+                  <span className="neo-badge">{meal.calories} kcal</span>
                 </div>
-                <p className="text-xs text-gray-500 mb-2">{meal.desc}</p>
-                <div className="flex gap-3 text-[10px] text-gray-400">
+                <p className="text-xs font-bold text-gray-600 mb-3">{meal.desc}</p>
+                <div className="flex gap-4 text-xs font-bold text-gray-500">
                   <span>단백질 {meal.protein}g</span>
                   <span>탄수화물 {meal.carbs}g</span>
                   <span>지방 {meal.fat}g</span>
