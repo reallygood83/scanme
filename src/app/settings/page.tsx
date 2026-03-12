@@ -22,7 +22,9 @@ import {
   ArrowLeft,
   Settings,
   Sparkles,
+  Database,
 } from 'lucide-react';
+import { loadDemoData } from '@/lib/demo-data';
 
 export default function SettingsPage() {
   const { status: cloud, loginWithGoogle, logout, authBusy, authError, clearAuthError } = useFirebaseStatus();
@@ -233,6 +235,22 @@ export default function SettingsPage() {
               <ChevronRight size={20} />
             </Link>
           ))}
+
+          <button
+            onClick={() => {
+              loadDemoData();
+              window.location.reload();
+            }}
+            className="neo-card-violet flex w-full items-center gap-3 p-5 text-left"
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white">
+              <Database size={20} className="text-violet-600" />
+            </div>
+            <div>
+              <span className="font-bold text-violet-700">데모 데이터 로드</span>
+              <p className="text-xs text-violet-600">투자자 프레젠테이션용 샘플 데이터</p>
+            </div>
+          </button>
 
           <button onClick={handleReset} className="neo-card flex w-full items-center gap-3 p-5 text-left">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-rose-200">

@@ -506,12 +506,231 @@ input[type="number"]::-webkit-outer-spin-button {
   75% { transform: translateX(4px); }
 }
 
+@keyframes neo-fade-in {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes neo-slide-up {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes neo-scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes neo-skeleton {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+@keyframes neo-count-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes neo-bar-grow {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes neo-check {
+  0% { stroke-dashoffset: 24; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes neo-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes neo-glow {
+  0%, 100% { box-shadow: var(--shadow-md), 0 0 0 rgba(163, 230, 53, 0); }
+  50% { box-shadow: var(--shadow-md), 0 0 20px rgba(163, 230, 53, 0.5); }
+}
+
 .neo-animate-bounce {
   animation: neo-bounce 0.5s ease infinite;
 }
 
 .neo-animate-pulse {
   animation: neo-pulse 2s ease infinite;
+}
+
+.neo-animate-fade-in {
+  animation: neo-fade-in 0.4s ease-out forwards;
+}
+
+.neo-animate-slide-up {
+  animation: neo-slide-up 0.5s ease-out forwards;
+}
+
+.neo-animate-scale-in {
+  animation: neo-scale-in 0.3s ease-out forwards;
+}
+
+.neo-animate-glow {
+  animation: neo-glow 2s ease-in-out infinite;
+}
+
+.neo-stagger > * {
+  opacity: 0;
+  animation: neo-fade-in 0.4s ease-out forwards;
+}
+.neo-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.neo-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.neo-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.neo-stagger > *:nth-child(4) { animation-delay: 150ms; }
+.neo-stagger > *:nth-child(5) { animation-delay: 200ms; }
+.neo-stagger > *:nth-child(6) { animation-delay: 250ms; }
+.neo-stagger > *:nth-child(7) { animation-delay: 300ms; }
+.neo-stagger > *:nth-child(8) { animation-delay: 350ms; }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Loading States
+   ───────────────────────────────────────────────────────────────────────────── */
+.neo-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--slate-100) 0%,
+    var(--slate-200) 50%,
+    var(--slate-100) 100%
+  );
+  background-size: 200px 100%;
+  animation: neo-skeleton 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+.neo-skeleton-text {
+  height: 16px;
+  width: 100%;
+  border-radius: 4px;
+}
+
+.neo-skeleton-title {
+  height: 28px;
+  width: 60%;
+  border-radius: 6px;
+}
+
+.neo-skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+}
+
+.neo-skeleton-card {
+  height: 120px;
+  width: 100%;
+  border-radius: 16px;
+  border: var(--border-width) solid var(--slate-200);
+}
+
+.neo-spinner {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--slate-200);
+  border-top-color: var(--lime-500);
+  border-radius: 50%;
+  animation: neo-spin 0.8s linear infinite;
+}
+
+.neo-spinner-lg {
+  width: 40px;
+  height: 40px;
+  border-width: 4px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Interactive States
+   ───────────────────────────────────────────────────────────────────────────── */
+.neo-pressable {
+  transition: all 0.1s ease;
+  cursor: pointer;
+}
+
+.neo-pressable:active {
+  transform: scale(0.97);
+}
+
+.neo-hover-lift {
+  transition: all 0.2s ease;
+}
+
+.neo-hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.neo-hover-glow:hover {
+  box-shadow: var(--shadow-md), 0 0 20px rgba(163, 230, 53, 0.4);
+}
+
+/* Progress bar animation */
+.neo-progress-animated .neo-progress-bar {
+  transform-origin: left;
+  animation: neo-bar-grow 1s ease-out forwards;
+}
+
+/* Chart bar animation */
+.neo-chart-bar {
+  transform-origin: bottom;
+  animation: neo-bar-grow 0.6s ease-out forwards;
+}
+
+.neo-chart-bar:nth-child(1) { animation-delay: 0ms; }
+.neo-chart-bar:nth-child(2) { animation-delay: 50ms; }
+.neo-chart-bar:nth-child(3) { animation-delay: 100ms; }
+.neo-chart-bar:nth-child(4) { animation-delay: 150ms; }
+.neo-chart-bar:nth-child(5) { animation-delay: 200ms; }
+.neo-chart-bar:nth-child(6) { animation-delay: 250ms; }
+.neo-chart-bar:nth-child(7) { animation-delay: 300ms; }
+
+/* Success check animation */
+.neo-check-icon {
+  stroke-dasharray: 24;
+  stroke-dashoffset: 24;
+  animation: neo-check 0.4s ease-out 0.2s forwards;
+}
+
+/* Toast animation */
+@keyframes neo-toast-in {
+  from { opacity: 0; transform: translateY(-100%) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes neo-toast-out {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-100%) scale(0.95); }
+}
+
+.neo-toast {
+  animation: neo-toast-in 0.3s ease-out forwards;
+}
+
+.neo-toast-exit {
+  animation: neo-toast-out 0.2s ease-in forwards;
+}
+
+/* Ripple effect */
+.neo-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.neo-ripple::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--ripple-x, 50%) var(--ripple-y, 50%), rgba(0,0,0,0.1) 0%, transparent 60%);
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.neo-ripple:active::after {
+  opacity: 1;
 }
 
 /* ─────────────────────────────────────────────────────────────────────────────

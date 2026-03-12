@@ -84,11 +84,8 @@ export default function HomePage() {
   if (!ready) {
     return (
       <div className="flex min-h-screen items-center justify-center">
-        <div className="neo-card p-8 text-center">
-          <div className="neo-badge-lime mb-4">
-            <Sparkles size={14} />
-            LOADING
-          </div>
+        <div className="neo-card neo-animate-scale-in p-8 text-center">
+          <div className="neo-spinner neo-spinner-lg mx-auto mb-4" />
           <p className="neo-subtitle">UricAI 준비 중...</p>
         </div>
       </div>
@@ -115,7 +112,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen pb-28 lg:pb-8">
-      <div className="mx-auto flex max-w-[500px] flex-col gap-5 px-4 py-6 lg:max-w-none lg:px-6">
+      <div className="neo-stagger mx-auto flex max-w-[500px] flex-col gap-5 px-4 py-6 lg:max-w-none lg:px-6">
         <header className="flex items-start justify-between gap-4">
           <div>
             <div className="neo-badge-dark mb-3">
@@ -132,7 +129,7 @@ export default function HomePage() {
           </Link>
         </header>
 
-        <section className="neo-card-dark p-6">
+        <section className="neo-card-dark neo-animate-glow p-6">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="neo-badge-lime mb-4">
