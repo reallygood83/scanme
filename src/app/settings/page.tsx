@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import BottomNav from '@/components/BottomNav';
 import { useFirebaseStatus } from '@/components/FirebaseBootstrap';
-import Header from '@/components/Header';
 import { storage, subscribeToStorageChanges } from '@/lib/storage';
 import {
   User,
@@ -20,6 +19,9 @@ import {
   Cloud,
   LogIn,
   LogOut,
+  ArrowLeft,
+  Settings,
+  Sparkles,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -60,199 +62,193 @@ export default function SettingsPage() {
     }
   };
 
+  const menuItems = [
+    { label: '가족 관리', href: '/family', icon: Users, color: 'text-lime-600' },
+    { label: '구독 관리', href: '/subscription', icon: CreditCard, color: 'text-violet-600' },
+    { label: 'GLP-1 트래커', href: '/glp1', icon: Syringe, color: 'text-cyan-600' },
+    { label: '다이어트 코치', href: '/diet', icon: Salad, color: 'text-orange-600' },
+  ];
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 max-w-[430px] mx-auto">
-      <Header title="더보기" />
+    <div className="min-h-screen pb-28 lg:pb-8">
+      <div className="mx-auto max-w-[500px] lg:max-w-none">
+        <header className="flex items-center gap-4 px-4 py-5 lg:px-6">
+          <Link href="/" className="neo-icon-btn">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <div className="neo-badge-dark mb-2">
+              <Settings size={12} />
+              SETTINGS
+            </div>
+            <h1 className="neo-title">더보기</h1>
+          </div>
+        </header>
 
-      <main className="flex-1 overflow-y-auto px-4 pb-20 space-y-3">
-        {/* 프로필 설정 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <button
-            onClick={() => setEditingProfile(!editingProfile)}
-            className="flex items-center justify-between w-full"
-          >
-            <div className="flex items-center gap-3">
-              <User size={20} className="text-blue-500" />
-              <span className="font-medium">프로필 설정</span>
-            </div>
-            <ChevronRight
-              size={18}
-              className={`text-gray-400 transition-transform ${editingProfile ? 'rotate-90' : ''}`}
-            />
-          </button>
-          {editingProfile && (
-            <div className="mt-4 space-y-3">
-              <div>
-                <label className="text-sm text-gray-500">이름</label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </div>
-              <div>
-                <label className="text-sm text-gray-500">나이</label>
-                <input
-                  type="number"
-                  value={age}
-                  onChange={(e) => setAge(Number(e.target.value))}
-                  className="w-full mt-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
-              </div>
-              <button
-                onClick={saveProfile}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl text-sm font-medium"
-              >
-                <Save size={16} />
-                저장
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* 알림 설정 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <button
-            onClick={() => setShowAlerts(!showAlerts)}
-            className="flex items-center justify-between w-full"
-          >
-            <div className="flex items-center gap-3">
-              <Bell size={20} className="text-yellow-500" />
-              <span className="font-medium">알림 설정</span>
-            </div>
-            <ChevronRight
-              size={18}
-              className={`text-gray-400 transition-transform ${showAlerts ? 'rotate-90' : ''}`}
-            />
-          </button>
-          {showAlerts && (
-            <div className="mt-4 space-y-3">
-              {[
-                { label: '식사 기록 알림', value: mealAlert, setter: setMealAlert },
-                { label: '약물 복용 알림', value: medAlert, setter: setMedAlert },
-                { label: '주간 리포트 알림', value: weeklyReport, setter: setWeeklyReport },
-              ].map(({ label, value, setter }) => (
-                <div key={label} className="flex items-center justify-between">
-                  <span className="text-sm">{label}</span>
-                  <button
-                    onClick={() => setter(!value)}
-                    className={`w-11 h-6 rounded-full transition-colors ${
-                      value ? 'bg-blue-500' : 'bg-gray-300'
-                    } relative`}
-                  >
-                    <span
-                      className={`block w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-transform ${
-                        value ? 'translate-x-5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </button>
+        <main className="space-y-4 px-4 pb-8 lg:px-6">
+          <div className="neo-card p-5">
+            <button
+              onClick={() => setEditingProfile(!editingProfile)}
+              className="flex w-full items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-cyan-200">
+                  <User size={20} />
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Cloud size={20} className={cloud.state === 'ready' ? 'text-sky-500' : cloud.state === 'error' ? 'text-amber-500' : 'text-gray-400'} />
-            <div>
-              <p className="font-medium text-gray-900">Firebase 동기화</p>
-              <p className="mt-1 text-sm text-gray-500">{cloud.message}</p>
-              {cloud.userId && <p className="mt-1 text-xs text-gray-400">사용자 ID: {cloud.userId}</p>}
-              {cloud.email && <p className="mt-1 text-xs text-gray-400">계정: {cloud.email}</p>}
-              {cloud.lastSyncedAt && <p className="mt-1 text-xs text-gray-400">최근 동기화: {new Date(cloud.lastSyncedAt).toLocaleString('ko-KR')}</p>}
-            </div>
+                <span className="font-bold">프로필 설정</span>
+              </div>
+              <ChevronRight
+                size={20}
+                className={`transition-transform ${editingProfile ? 'rotate-90' : ''}`}
+              />
+            </button>
+            {editingProfile && (
+              <div className="mt-4 space-y-3">
+                <div>
+                  <label className="neo-caption">이름</label>
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="neo-input mt-1"
+                  />
+                </div>
+                <div>
+                  <label className="neo-caption">나이</label>
+                  <input
+                    type="number"
+                    value={age}
+                    onChange={(e) => setAge(Number(e.target.value))}
+                    className="neo-input mt-1"
+                  />
+                </div>
+                <button onClick={saveProfile} className="neo-btn neo-btn-primary">
+                  <Save size={16} />
+                  저장
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="mt-4 grid gap-2">
-            {cloud.isAnonymous ? (
-              <button
-                onClick={() => {
-                  clearAuthError();
-                  loginWithGoogle();
-                }}
-                disabled={authBusy}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                <LogIn size={16} />
-                {authBusy ? 'Google 로그인 연결 중...' : 'Google 로그인 연결'}
-              </button>
-            ) : (
-              <>
-                <div className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                  {cloud.displayName || cloud.email || 'Google 사용자'} 계정으로 동기화 중입니다.
+          <div className="neo-card p-5">
+            <button
+              onClick={() => setShowAlerts(!showAlerts)}
+              className="flex w-full items-center justify-between"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-orange-200">
+                  <Bell size={20} />
                 </div>
+                <span className="font-bold">알림 설정</span>
+              </div>
+              <ChevronRight
+                size={20}
+                className={`transition-transform ${showAlerts ? 'rotate-90' : ''}`}
+              />
+            </button>
+            {showAlerts && (
+              <div className="mt-4 space-y-3">
+                {[
+                  { label: '식사 기록 알림', value: mealAlert, setter: setMealAlert },
+                  { label: '약물 복용 알림', value: medAlert, setter: setMedAlert },
+                  { label: '주간 리포트 알림', value: weeklyReport, setter: setWeeklyReport },
+                ].map(({ label, value, setter }) => (
+                  <div key={label} className="flex items-center justify-between rounded-xl border-2 border-black bg-slate-50 p-3">
+                    <span className="font-semibold">{label}</span>
+                    <button
+                      onClick={() => setter(!value)}
+                      className={`h-7 w-12 rounded-full border-2 border-black transition-colors ${
+                        value ? 'bg-lime-400' : 'bg-slate-200'
+                      } relative`}
+                    >
+                      <span
+                        className={`absolute top-0.5 block h-5 w-5 rounded-full border-2 border-black bg-white transition-transform ${
+                          value ? 'translate-x-5' : 'translate-x-0.5'
+                        }`}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="neo-card-cyan p-5">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white">
+                <Cloud size={20} />
+              </div>
+              <div className="flex-1">
+                <p className="font-bold">Firebase 동기화</p>
+                <p className="mt-1 text-sm">{cloud.message}</p>
+                {cloud.userId && <p className="mt-1 text-xs text-slate-600">UID: {cloud.userId}</p>}
+                {cloud.email && <p className="mt-1 text-xs text-slate-600">계정: {cloud.email}</p>}
+                {cloud.lastSyncedAt && <p className="mt-1 text-xs text-slate-500">최근 동기화: {new Date(cloud.lastSyncedAt).toLocaleString('ko-KR')}</p>}
+              </div>
+            </div>
+
+            <div className="mt-4 space-y-2">
+              {cloud.isAnonymous ? (
                 <button
                   onClick={() => {
                     clearAuthError();
-                    logout();
+                    loginWithGoogle();
                   }}
                   disabled={authBusy}
-                  className="flex w-full items-center justify-center gap-2 rounded-xl bg-gray-100 px-4 py-3 text-sm font-semibold text-gray-700 disabled:opacity-50"
+                  className="neo-btn neo-btn-dark w-full disabled:opacity-50"
                 >
-                  <LogOut size={16} />
-                  {authBusy ? '로그아웃 중...' : '로그아웃'}
+                  <LogIn size={16} />
+                  {authBusy ? 'Google 로그인 연결 중...' : 'Google 로그인 연결'}
                 </button>
-              </>
-            )}
-            <div className="rounded-xl bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-500">
-              익명 세션에서 Google 로그인을 연결하면 현재 Firebase 사용자에 계정을 링크해서 데이터를 최대한 유지합니다.
+              ) : (
+                <>
+                  <div className="rounded-xl border-2 border-black bg-lime-200 px-4 py-3 text-sm font-semibold">
+                    {cloud.displayName || cloud.email || 'Google 사용자'} 계정으로 동기화 중
+                  </div>
+                  <button
+                    onClick={() => {
+                      clearAuthError();
+                      logout();
+                    }}
+                    disabled={authBusy}
+                    className="neo-btn neo-btn-secondary w-full disabled:opacity-50"
+                  >
+                    <LogOut size={16} />
+                    {authBusy ? '로그아웃 중...' : '로그아웃'}
+                  </button>
+                </>
+              )}
+              {authError && <div className="neo-badge-rose w-full justify-center py-3">{authError}</div>}
             </div>
-            {authError && <div className="rounded-xl bg-rose-50 px-4 py-3 text-xs leading-5 text-rose-700">{authError}</div>}
           </div>
-        </div>
 
-        {/* 가족 관리 */}
-        <Link href="/family" className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Users size={20} className="text-green-500" />
-            <span className="font-medium">가족 관리</span>
-          </div>
-          <ChevronRight size={18} className="text-gray-400" />
-        </Link>
+          {menuItems.map(({ label, href, icon: Icon, color }) => (
+            <Link key={href} href={href} className="neo-card flex items-center justify-between p-5">
+              <div className="flex items-center gap-3">
+                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white ${color}`}>
+                  <Icon size={20} />
+                </div>
+                <span className="font-bold">{label}</span>
+              </div>
+              <ChevronRight size={20} />
+            </Link>
+          ))}
 
-        {/* 구독 관리 */}
-        <Link href="/subscription" className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CreditCard size={20} className="text-purple-500" />
-            <span className="font-medium">구독 관리</span>
-          </div>
-          <ChevronRight size={18} className="text-gray-400" />
-        </Link>
-
-        {/* GLP-1 트래커 */}
-        <Link href="/glp1" className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Syringe size={20} className="text-teal-500" />
-            <span className="font-medium">GLP-1 트래커</span>
-          </div>
-          <ChevronRight size={18} className="text-gray-400" />
-        </Link>
-
-        {/* 다이어트 코치 */}
-        <Link href="/diet" className="bg-white rounded-2xl p-4 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Salad size={20} className="text-orange-500" />
-            <span className="font-medium">다이어트 코치</span>
-          </div>
-          <ChevronRight size={18} className="text-gray-400" />
-        </Link>
-
-        {/* 데이터 초기화 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <button onClick={handleReset} className="flex items-center gap-3 w-full">
-            <Trash2 size={20} className="text-red-500" />
-            <span className="font-medium text-red-500">데이터 초기화</span>
+          <button onClick={handleReset} className="neo-card flex w-full items-center gap-3 p-5 text-left">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-rose-200">
+              <Trash2 size={20} />
+            </div>
+            <span className="font-bold text-rose-600">데이터 초기화</span>
           </button>
-        </div>
 
-        {/* 앱 버전 */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-3">
-          <Info size={20} className="text-gray-400" />
-          <span className="text-sm text-gray-500">앱 버전: 1.0.0 MVP</span>
-        </div>
-      </main>
+          <div className="neo-card-flat flex items-center gap-3 p-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-slate-100">
+              <Info size={20} />
+            </div>
+            <span className="text-sm font-semibold text-slate-500">앱 버전: 1.0.0 MVP</span>
+          </div>
+        </main>
+      </div>
 
       <BottomNav />
     </div>

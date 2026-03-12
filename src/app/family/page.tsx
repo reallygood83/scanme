@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Baby, Droplets, GlassWater, HeartPulse, Plus, Users } from 'lucide-react';
-import Header from '@/components/Header';
+import Link from 'next/link';
+import { ArrowLeft, Baby, Droplets, GlassWater, HeartPulse, Plus, Sparkles, Users } from 'lucide-react';
 import { summarizeGlucose } from '@/lib/glucose';
 import { storage, FamilyMember, MealEntry, subscribeToStorageChanges } from '@/lib/storage';
 
@@ -51,131 +51,173 @@ export default function FamilyPage() {
   const challengeTotal = 7;
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff5eb,transparent_36%),linear-gradient(180deg,#fffaf5_0%,#f8fafc_100%)]">
-      <div className="mx-auto max-w-[430px] pb-10">
-        <Header title="가족 건강" showBack />
+    <div className="min-h-screen pb-8">
+      <div className="mx-auto max-w-[500px] lg:max-w-none">
+        <header className="flex items-center gap-4 px-4 py-5 lg:px-6">
+          <Link href="/" className="neo-icon-btn">
+            <ArrowLeft size={20} />
+          </Link>
+          <div>
+            <div className="neo-badge-orange mb-2">
+              <Users size={12} />
+              FAMILY
+            </div>
+            <h1 className="neo-title">가족 건강</h1>
+          </div>
+        </header>
 
-        <main className="space-y-4 px-4 pb-8">
-          <section className="rounded-[30px] bg-slate-950 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
-            <div className="flex items-start justify-between gap-3">
+        <main className="space-y-5 px-4 pb-8 lg:px-6">
+          <section className="neo-card-dark p-6">
+            <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-200">Family Plan</p>
-                <h2 className="mt-2 text-2xl font-semibold">우리 가족 건강판</h2>
-                <p className="mt-2 text-sm leading-6 text-slate-300">가족 식사, 혈당, 수분 습관을 한 번에 관리하는 홈베이스입니다.</p>
+                <div className="neo-badge-orange mb-3">
+                  <Sparkles size={12} />
+                  FAMILY PLAN
+                </div>
+                <p className="neo-subtitle text-white">우리 가족 건강판</p>
+                <p className="neo-body mt-2 text-slate-300">
+                  가족 식사, 혈당, 수분 습관을 한 번에 관리하는 홈베이스입니다.
+                </p>
               </div>
-              <div className="rounded-2xl bg-white/10 p-3">
-                <Users size={22} className="text-orange-200" />
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl border-2 border-slate-600 bg-slate-800">
+                <Users size={28} className="text-orange-300" />
               </div>
             </div>
 
-            <div className="mt-5 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-2xl bg-white/8 px-3 py-4">
-                <p className="text-xs text-slate-300">구성원</p>
-                <p className="mt-2 text-2xl font-semibold">{members.length + 1}</p>
+            <div className="mt-6 grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-xl border-2 border-slate-700 bg-slate-800 px-3 py-4">
+                <p className="text-xs font-semibold text-slate-400">구성원</p>
+                <p className="mt-2 text-2xl font-black text-white">{members.length + 1}</p>
               </div>
-              <div className="rounded-2xl bg-white/8 px-3 py-4">
-                <p className="text-xs text-slate-300">TIR</p>
-                <p className="mt-2 text-2xl font-semibold">{glucoseSummary.timeInRange}%</p>
+              <div className="rounded-xl border-2 border-slate-700 bg-slate-800 px-3 py-4">
+                <p className="text-xs font-semibold text-slate-400">TIR</p>
+                <p className="mt-2 text-2xl font-black text-white">{glucoseSummary.timeInRange}%</p>
               </div>
-              <div className="rounded-2xl bg-white/8 px-3 py-4">
-                <p className="text-xs text-slate-300">요산</p>
-                <p className="mt-2 text-2xl font-semibold">{latestUric ? latestUric.value.toFixed(1) : '--'}</p>
+              <div className="rounded-xl border-2 border-slate-700 bg-slate-800 px-3 py-4">
+                <p className="text-xs font-semibold text-slate-400">요산</p>
+                <p className="mt-2 text-2xl font-black text-white">{latestUric ? latestUric.value.toFixed(1) : '--'}</p>
               </div>
             </div>
           </section>
 
-          <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-orange-100">
+          <section className="neo-card-orange p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">오늘의 가족 식사 브리핑</p>
-                <p className="mt-1 text-xs text-slate-500">한 번의 식사 기록을 가족 관점에서 바로 공유합니다.</p>
+                <p className="neo-subtitle">오늘의 가족 식사 브리핑</p>
+                <p className="mt-1 text-sm text-slate-700">한 번의 식사 기록을 가족 관점에서 공유합니다.</p>
               </div>
-              <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{todayMeals.length}끼 공유</span>
+              <span className="neo-badge-dark">{todayMeals.length}끼</span>
             </div>
 
             <div className="mt-4 space-y-3">
               {todayMeals.length > 0 ? todayMeals.map((meal) => (
-                <div key={meal.id} className="rounded-2xl bg-orange-50/60 px-4 py-3">
+                <div key={meal.id} className="rounded-xl border-2 border-black bg-white px-4 py-3">
                   <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{meal.name}</p>
+                      <p className="font-bold">{meal.name}</p>
                       <p className="mt-1 text-xs text-slate-500">{meal.calories}kcal · GI {meal.gi} · 퓨린 {meal.purineLevel}</p>
                     </div>
-                    <span className="text-xs text-slate-400">{meal.time}</span>
+                    <span className="text-xs font-semibold text-slate-500">{meal.time}</span>
                   </div>
                 </div>
               )) : (
-                <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">오늘 공유된 식사 기록이 없습니다.</div>
+                <div className="rounded-xl border-2 border-dashed border-black bg-white/50 py-8 text-center">
+                  <p className="text-sm font-semibold">오늘 공유된 식사 기록이 없습니다</p>
+                </div>
               )}
             </div>
           </section>
 
-          <section className="grid grid-cols-2 gap-3">
-            <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
-              <div className="flex items-center gap-2 text-sky-600">
-                <HeartPulse size={18} />
-                <p className="text-sm font-semibold text-slate-900">보호자 요약</p>
-              </div>
-              <p className="mt-4 text-sm leading-6 text-slate-600">혈당 범위 유지율 {glucoseSummary.timeInRange}% · 고혈당 {glucoseSummary.highCount}건 · 저혈당 {glucoseSummary.lowCount}건</p>
-            </div>
-            <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <section className="grid grid-cols-2 gap-4">
+            <div className="neo-card p-5">
               <div className="flex items-center gap-2 text-cyan-600">
-                <GlassWater size={18} />
-                <p className="text-sm font-semibold text-slate-900">가족 챌린지</p>
+                <HeartPulse size={18} />
+                <p className="font-bold">보호자 요약</p>
               </div>
-              <p className="mt-4 text-sm leading-6 text-slate-600">이번 주 물 2L 챌린지 {challengeDays}/{challengeTotal}일 달성</p>
+              <p className="neo-body mt-3">
+                혈당 범위 유지율 {glucoseSummary.timeInRange}% · 고혈당 {glucoseSummary.highCount}건 · 저혈당 {glucoseSummary.lowCount}건
+              </p>
+            </div>
+            <div className="neo-card p-5">
+              <div className="flex items-center gap-2 text-lime-600">
+                <GlassWater size={18} />
+                <p className="font-bold">가족 챌린지</p>
+              </div>
+              <p className="neo-body mt-3">
+                이번 주 물 2L 챌린지 {challengeDays}/{challengeTotal}일 달성
+              </p>
             </div>
           </section>
 
-          <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+          <section className="neo-card p-5">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-semibold text-slate-900">가족 구성원 추가</p>
-                <p className="mt-1 text-xs text-slate-500">관리자, 멤버, 아이 역할을 가볍게 시작합니다.</p>
+                <p className="neo-subtitle">가족 구성원 추가</p>
+                <p className="mt-1 text-sm text-slate-500">관리자, 멤버, 아이 역할을 설정합니다.</p>
               </div>
-              <button onClick={() => setKidsMode((current) => !current)} className={`rounded-full px-3 py-1 text-xs font-semibold ${kidsMode ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+              <button 
+                onClick={() => setKidsMode((current) => !current)} 
+                className={`neo-badge ${kidsMode ? 'neo-badge-cyan' : 'neo-badge-dark'}`}
+              >
                 {kidsMode ? '키즈 모드 ON' : '키즈 모드 OFF'}
               </button>
             </div>
 
-            <div className="mt-4 grid gap-3">
-              <input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="이름" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-              <input value={newRelation} onChange={(event) => setNewRelation(event.target.value)} placeholder="관계 (예: 배우자, 아들)" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
-              <button onClick={() => setIsKid((current) => !current)} className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold ${isKid ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'}`}>
+            <div className="mt-4 space-y-3">
+              <input 
+                value={newName} 
+                onChange={(event) => setNewName(event.target.value)} 
+                placeholder="이름" 
+                className="neo-input" 
+              />
+              <input 
+                value={newRelation} 
+                onChange={(event) => setNewRelation(event.target.value)} 
+                placeholder="관계 (예: 배우자, 아들)" 
+                className="neo-input" 
+              />
+              <button 
+                onClick={() => setIsKid((current) => !current)} 
+                className={`neo-btn w-full ${isKid ? 'neo-btn-cyan' : 'neo-btn-secondary'}`}
+              >
                 <Baby size={16} />
                 {isKid ? '아이 구성원으로 추가' : '성인 구성원으로 추가'}
               </button>
-              <button onClick={addMember} className="flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
+              <button onClick={addMember} className="neo-btn neo-btn-primary w-full">
                 <Plus size={16} />
                 가족 구성원 저장
               </button>
             </div>
           </section>
 
-          <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
-            <p className="text-sm font-semibold text-slate-900">우리 가족 멤버</p>
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+          <section className="neo-card p-5">
+            <p className="neo-subtitle mb-4">우리 가족 멤버</p>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl border-2 border-black bg-lime-100 px-4 py-3">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-lg">🧑</div>
+                  <div className="flex h-11 w-11 items-center justify-center rounded-xl border-2 border-black bg-white text-lg">🧑</div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-900">나</p>
-                    <p className="text-xs text-slate-500">관리자 · 요산 {latestUric ? latestUric.value.toFixed(1) : '--'} · 혈당 평균 {glucoseSummary.average || '--'}</p>
+                    <p className="font-bold">나</p>
+                    <p className="text-xs text-slate-600">관리자 · 요산 {latestUric ? latestUric.value.toFixed(1) : '--'} · 혈당 평균 {glucoseSummary.average || '--'}</p>
                   </div>
                 </div>
-                <Droplets size={16} className="text-sky-500" />
+                <Droplets size={18} className="text-cyan-600" />
               </div>
 
               {members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                <div key={member.id} className="flex items-center justify-between rounded-xl border-2 border-black bg-white px-4 py-3">
                   <div className="flex items-center gap-3">
-                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-lg ${member.isKid ? 'bg-sky-100' : 'bg-orange-100'}`}>{member.avatar}</div>
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-xl border-2 border-black text-lg ${member.isKid ? 'bg-cyan-100' : 'bg-orange-100'}`}>
+                      {member.avatar}
+                    </div>
                     <div>
-                      <p className="text-sm font-semibold text-slate-900">{member.name}</p>
-                      <p className="text-xs text-slate-500">{member.relation}{member.isKid ? ' · 아이 모드 추천' : ''}</p>
+                      <p className="font-bold">{member.name}</p>
+                      <p className="text-xs text-slate-600">{member.relation}{member.isKid ? ' · 아이 모드 추천' : ''}</p>
                     </div>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${member.isKid ? 'bg-sky-100 text-sky-700' : 'bg-orange-100 text-orange-700'}`}>{member.isKid ? 'Child' : 'Member'}</span>
+                  <span className={`neo-badge ${member.isKid ? 'neo-badge-cyan' : 'neo-badge-orange'}`}>
+                    {member.isKid ? 'Child' : 'Member'}
+                  </span>
                 </div>
               ))}
             </div>

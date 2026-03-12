@@ -1,69 +1,162 @@
 'use client';
 
 import Link from 'next/link';
-import { Activity, HeartPulse, ShieldCheck, Sparkles } from 'lucide-react';
+import { usePathname } from 'next/navigation';
+import { 
+  Activity, 
+  BarChart3, 
+  Heart, 
+  Home, 
+  Settings, 
+  Sparkles, 
+  Users, 
+  Zap,
+  TrendingUp,
+  Shield,
+  Smartphone
+} from 'lucide-react';
+
+const NAV_ITEMS = [
+  { label: '홈', href: '/', icon: Home },
+  { label: '기록', href: '/record', icon: Activity },
+  { label: '리포트', href: '/report', icon: BarChart3 },
+  { label: '가족', href: '/family', icon: Users },
+  { label: '설정', href: '/settings', icon: Settings },
+];
+
+const FEATURES = [
+  { icon: TrendingUp, label: 'Libre CGM', desc: '실시간 혈당 데이터' },
+  { icon: Shield, label: 'Firebase', desc: '클라우드 동기화' },
+  { icon: Heart, label: '가족 케어', desc: '함께 관리하는 건강' },
+];
 
 export default function DesktopShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[minmax(280px,1fr)_440px_minmax(280px,1fr)] lg:gap-8 lg:px-8 lg:py-8">
-      <aside className="hidden lg:flex lg:flex-col lg:justify-between lg:rounded-[36px] lg:border lg:border-white/70 lg:bg-[linear-gradient(160deg,rgba(15,23,42,0.96),rgba(15,76,129,0.88))] lg:p-8 lg:text-white lg:shadow-[0_30px_90px_rgba(15,23,42,0.22)]">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold tracking-[0.18em] text-sky-100">
-            <Sparkles size={14} />
-            URICAI WEB
+    <div className="min-h-screen lg:grid lg:grid-cols-[320px_1fr_320px] lg:gap-6 lg:p-6 xl:gap-8 xl:p-8">
+      <aside className="hidden lg:flex lg:flex-col lg:gap-6">
+        <div className="neo-card-lime p-6">
+          <div className="neo-badge-dark mb-4">
+            <Sparkles size={12} />
+            URICAI
           </div>
-          <h2 className="mt-6 text-4xl font-semibold leading-tight">가족 대사 건강을 위한 더 나은 웹 경험</h2>
-          <p className="mt-4 text-sm leading-7 text-slate-200">
-            모바일 PWA 감성은 유지하되, 데스크톱에서는 더 넓은 시선과 더 깊은 정보 밀도로 제품답게 보이도록 구성했습니다.
+          <h1 className="neo-title text-black">
+            가족 대사 건강을<br />함께 관리합니다
+          </h1>
+          <p className="neo-body mt-4 text-slate-800">
+            요산, 혈당, 식사를 한 화면에서 확인하고 AI 코치의 개인화된 조언을 받으세요.
           </p>
         </div>
 
-        <div className="space-y-3">
-          {[
-            ['Libre 실데이터', 'CSV 업로드 후 즉시 혈당 흐름과 TIR 반영'],
-            ['Firebase 동기화', '익명 세션과 Google 계정 연결을 모두 지원'],
-            ['가족 중심 UX', '식사, 요산, 체중, 혈당을 한 화면에서 조망'],
-          ].map(([title, description]) => (
-            <div key={title} className="rounded-[24px] border border-white/10 bg-white/8 px-4 py-4">
-              <p className="text-sm font-semibold">{title}</p>
-              <p className="mt-2 text-xs leading-6 text-slate-300">{description}</p>
-            </div>
-          ))}
+        <nav className="neo-card p-4">
+          <p className="neo-caption mb-3 px-2">메뉴</p>
+          <ul className="space-y-2">
+            {NAV_ITEMS.map(({ label, href, icon: Icon }) => {
+              const isActive = href === '/' ? pathname === '/' : pathname.startsWith(href);
+              return (
+                <li key={href}>
+                  <Link
+                    href={href}
+                    className={`flex items-center gap-3 rounded-xl px-4 py-3 font-semibold transition-all ${
+                      isActive
+                        ? 'neo-nav-item-active'
+                        : 'hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon size={20} strokeWidth={isActive ? 2.5 : 2} />
+                    {label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
+
+        <div className="neo-card-cyan p-5">
+          <p className="neo-caption mb-4">주요 기능</p>
+          <div className="space-y-3">
+            {FEATURES.map(({ icon: Icon, label, desc }) => (
+              <div 
+                key={label} 
+                className="flex items-center gap-3 rounded-xl border-2 border-black bg-white p-3"
+              >
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-900 text-white">
+                  <Icon size={18} />
+                </div>
+                <div>
+                  <p className="text-sm font-bold">{label}</p>
+                  <p className="text-xs text-slate-600">{desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </aside>
 
-      <main className="relative min-h-screen lg:min-h-0 lg:overflow-hidden lg:rounded-[40px] lg:border lg:border-white/80 lg:bg-white/70 lg:shadow-[0_30px_90px_rgba(15,23,42,0.14)] lg:backdrop-blur">
-        <div className="hidden lg:block lg:absolute lg:inset-x-0 lg:top-0 lg:h-12 lg:bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(255,255,255,0))]" />
-        <div className="relative mx-auto min-h-screen max-w-[430px] lg:min-h-[860px] lg:bg-white lg:shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-          {children}
+      <main className="relative min-h-screen lg:min-h-0">
+        <div className="mx-auto min-h-screen max-w-[500px] lg:max-w-none lg:min-h-0">
+          <div className="neo-card-flat lg:min-h-[calc(100vh-64px)] lg:overflow-y-auto lg:bg-white">
+            {children}
+          </div>
         </div>
       </main>
 
-      <aside className="hidden lg:flex lg:flex-col lg:gap-4">
-        <div className="rounded-[32px] border border-white/70 bg-white/82 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.1)] backdrop-blur">
-          <div className="flex items-center gap-2 text-sky-700">
-            <HeartPulse size={18} />
-            <p className="text-sm font-semibold text-slate-900">웹 대시보드 포인트</p>
+      <aside className="hidden lg:flex lg:flex-col lg:gap-6">
+        <div className="neo-card-dark p-6">
+          <div className="mb-4 flex items-center gap-2">
+            <Zap size={18} className="text-lime-400" />
+            <span className="neo-badge-lime">LIVE</span>
           </div>
-          <ul className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
-            <li className="rounded-2xl bg-slate-50 px-4 py-3">넓은 화면에서도 중앙 앱이 고립돼 보이지 않도록 제품 정보 패널을 같이 배치했습니다.</li>
-            <li className="rounded-2xl bg-slate-50 px-4 py-3">설정, 로그인, 리포트 흐름은 데스크톱에서도 신뢰감 있게 읽히도록 간격과 프레이밍을 키웠습니다.</li>
-          </ul>
+          <p className="neo-caption text-slate-400">실시간 연동</p>
+          <div className="mt-3">
+            <span className="neo-stat-value text-white">24/7</span>
+          </div>
+          <p className="neo-body mt-4 text-slate-300">
+            Libre CGM과 연동하여 혈당 데이터를 자동으로 가져옵니다.
+          </p>
         </div>
 
-        <div className="rounded-[32px] border border-white/70 bg-white/82 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.1)] backdrop-blur">
-          <div className="flex items-center gap-2 text-emerald-700">
-            <ShieldCheck size={18} />
-            <p className="text-sm font-semibold text-slate-900">빠른 이동</p>
+        <div className="neo-card p-5">
+          <p className="neo-caption mb-4">빠른 액션</p>
+          <div className="space-y-3">
+            <Link href="/login" className="neo-btn neo-btn-primary w-full">
+              <Shield size={18} />
+              계정 연결
+            </Link>
+            <Link href="/record?tab=glucose" className="neo-btn neo-btn-cyan w-full">
+              <Activity size={18} />
+              Libre 업로드
+            </Link>
+            <Link href="/report" className="neo-btn neo-btn-secondary w-full">
+              <BarChart3 size={18} />
+              주간 리포트
+            </Link>
           </div>
-          <div className="mt-4 grid gap-3">
-            <Link href="/login" className="rounded-2xl bg-slate-950 px-4 py-3 text-center text-sm font-semibold text-white">계정 연결</Link>
-            <Link href="/record?tab=glucose" className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-700">Libre 업로드</Link>
-            <Link href="/report" className="rounded-2xl bg-slate-100 px-4 py-3 text-center text-sm font-semibold text-slate-700">주간 리포트</Link>
+        </div>
+
+        <div className="neo-card-orange p-5">
+          <div className="flex items-start gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl border-2 border-black bg-white">
+              <Smartphone size={24} />
+            </div>
+            <div>
+              <p className="font-bold">모바일 앱</p>
+              <p className="mt-1 text-sm text-slate-800">
+                PWA로 홈 화면에 추가하여 네이티브 앱처럼 사용하세요.
+              </p>
+            </div>
           </div>
-          <div className="mt-4 flex items-center gap-2 rounded-2xl bg-sky-50 px-4 py-3 text-xs leading-5 text-sky-700">
-            <Activity size={14} />
-            지금 구조는 PWA와 웹 모두를 함께 고려한 하이브리드 레이아웃입니다.
+        </div>
+
+        <div className="neo-card-violet p-5 text-center">
+          <p className="neo-caption">투자자 여러분께</p>
+          <p className="neo-subtitle mt-2">
+            헬스케어의 미래,<br />UricAI와 함께
+          </p>
+          <div className="mt-4 flex justify-center gap-2">
+            <span className="neo-badge-dark">Series A</span>
+            <span className="neo-badge-lime">2024</span>
           </div>
         </div>
       </aside>
