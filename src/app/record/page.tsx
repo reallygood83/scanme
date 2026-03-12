@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, Suspense } from 'react';
+import { useState, useEffect, useCallback, Suspense, useMemo, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   LineChart,
@@ -14,8 +14,11 @@ import {
 } from 'recharts';
 import { storage, UricAcidEntry, GlucoseEntry, MealEntry } from '@/lib/storage';
 import { analyzeMeal } from '@/lib/mockAI';
+import { getLatestTrend, getSourceLabel, getTodaySeries, getTrendLabel, summarizeGlucose } from '@/lib/glucose';
+import { parseLibreFile } from '@/lib/libre';
 import BottomNav from '@/components/BottomNav';
 import Header from '@/components/Header';
+import { Activity, FileUp, ShieldCheck, TriangleAlert, Waves } from 'lucide-react';
 
 type TabKey = 'uric' | 'glucose' | 'meal';
 
@@ -42,6 +45,7 @@ const MEAL_CONTEXT_LABELS: Record<string, string> = {
   before_meal: '식전',
   after_meal: '식후',
   bedtime: '취침전',
+  continuous: '연속측정',
 };
 
 const MEAL_TYPE_LABELS: Record<string, string> = {
@@ -209,9 +213,15 @@ function GlucoseTab() {
   const [time, setTime] = useState('');
   const [entries, setEntries] = useState<GlucoseEntry[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [libreMeta, setLibreMeta] = useState(storage.getLibreImportMeta());
+  const [importError, setImportError] = useState('');
+  const [importMessage, setImportMessage] = useState('');
+  const [importing, setImporting] = useState(false);
+  const importInProgress = useRef(false);
 
   const load = useCallback(() => {
     setEntries(storage.getGlucose());
+    setLibreMeta(storage.getLibreImportMeta());
   }, []);
 
   useEffect(() => {
@@ -231,160 +241,236 @@ function GlucoseTab() {
       date,
       time,
       mealContext,
+      source: 'manual',
     };
     storage.addGlucose(entry);
     setValue('');
     load();
   };
 
-  const today = new Date().toISOString().split('T')[0];
-  const todayEntries = entries
-    .filter((e) => e.date === today)
-    .sort((a, b) => a.time.localeCompare(b.time));
+  const handleLibreImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (importInProgress.current) return;
 
-  const chartData = todayEntries.map((e) => ({
-    label: e.time.slice(0, 5),
-    value: e.value,
-  }));
+    importInProgress.current = true;
+    setImporting(true);
+    setImportError('');
+    setImportMessage('');
 
-  // TIR calculation
-  const inRange = entries.filter((e) => e.value >= 70 && e.value <= 180).length;
-  const tirPercent = entries.length > 0 ? Math.round((inRange / entries.length) * 100) : 0;
+    try {
+      const text = await file.text();
+      const result = parseLibreFile(text, file.name);
+      storage.importLibreGlucose(result.entries, result.meta);
+      setImportMessage(`${result.entries.length}건의 Libre 혈당 데이터를 가져왔습니다.${result.meta.skippedCount > 0 ? ` (${result.meta.skippedCount}건은 형식 오류로 제외)` : ''}`);
+      load();
+    } catch (error) {
+      setImportError(error instanceof Error ? error.message : 'Libre 파일을 읽는 중 문제가 발생했습니다.');
+    } finally {
+      event.target.value = '';
+      importInProgress.current = false;
+      setImporting(false);
+    }
+  };
+
+  const chartData = useMemo(() => getTodaySeries(entries), [entries]);
+  const summary = useMemo(() => summarizeGlucose(entries), [entries]);
+  const latestTrend = useMemo(() => getLatestTrend(entries), [entries]);
 
   const recent = [...entries]
     .sort((a, b) => `${b.date}T${b.time}`.localeCompare(`${a.date}T${a.time}`))
     .slice(0, 10);
 
+  const libreReadings = entries.filter((entry) => entry.source === 'libre').length;
+  const latestEntry = recent[0];
+  const metricCards = [
+    {
+      label: '평균 혈당',
+      value: summary.totalCount ? `${summary.average}` : '--',
+      unit: 'mg/dL',
+      tone: 'from-sky-50 to-white text-sky-700',
+      icon: Activity,
+    },
+    {
+      label: 'TIR',
+      value: `${summary.timeInRange}`,
+      unit: '%',
+      tone: 'from-emerald-50 to-white text-emerald-700',
+      icon: ShieldCheck,
+    },
+    {
+      label: 'GMI',
+      value: summary.totalCount ? `${summary.gmi}` : '--',
+      unit: '%',
+      tone: 'from-violet-50 to-white text-violet-700',
+      icon: Waves,
+    },
+    {
+      label: '스파이크',
+      value: `${summary.spikeCount}`,
+      unit: '회',
+      tone: 'from-amber-50 to-white text-amber-700',
+      icon: TriangleAlert,
+    },
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Input form */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
-        <h3 className="font-semibold text-gray-800">혈당 수치 입력</h3>
-        <input
-          type="number"
-          placeholder="mg/dL"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          className="w-full border border-gray-200 rounded-xl p-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-300"
-        />
-        <select
-          value={mealContext}
-          onChange={(e) => setMealContext(e.target.value as GlucoseEntry['mealContext'])}
-          className="w-full border border-gray-200 rounded-xl p-3 text-sm bg-white"
-        >
-          <option value="fasting">공복</option>
-          <option value="before_meal">식전</option>
-          <option value="after_meal">식후</option>
-          <option value="bedtime">취침전</option>
-        </select>
-        <div className="flex gap-2">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-xl p-3 text-sm"
-          />
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            className="flex-1 border border-gray-200 rounded-xl p-3 text-sm"
-          />
+      <div className="rounded-[28px] border border-sky-100 bg-[linear-gradient(135deg,rgba(240,249,255,0.95),rgba(255,255,255,0.95))] p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-500">Libre Import</p>
+            <h3 className="mt-2 text-lg font-semibold text-slate-900">실제 리브레 혈당 데이터를 가져오세요</h3>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              LibreView에서 내보낸 원본 파일을 올리면 혈당 추이, TIR, 스파이크 요약을 바로 반영합니다.
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white/80 p-3 text-sky-600 shadow-sm">
+            <FileUp size={22} />
+          </div>
         </div>
-        <button
-          onClick={handleSave}
-          className="w-full bg-blue-500 text-white font-semibold rounded-xl p-3 active:bg-blue-600"
-        >
-          저장
-        </button>
-      </div>
 
-      {/* 24h Chart */}
-      {isMounted && chartData.length > 0 && (
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-3">오늘의 혈당 추이</h3>
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={chartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} />
-              <YAxis domain={[50, 250]} tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <ReferenceLine y={70} stroke="#22c55e" strokeDasharray="4 4" />
-              <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="4 4" />
-              <Line
-                type="monotone"
-                dataKey="value"
-                stroke="#8B5CF6"
-                strokeWidth={2}
-                dot={{ r: 4, fill: '#8B5CF6' }}
-                activeDot={{ r: 6 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      )}
-
-      {/* TIR */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm flex items-center gap-4">
-        <div className="relative w-20 h-20">
-          <svg viewBox="0 0 36 36" className="w-20 h-20 -rotate-90">
-            <circle
-              cx="18"
-              cy="18"
-              r="15.915"
-              fill="none"
-              stroke="#e5e7eb"
-              strokeWidth="3"
-            />
-            <circle
-              cx="18"
-              cy="18"
-              r="15.915"
-              fill="none"
-              stroke={tirPercent >= 70 ? '#22c55e' : tirPercent >= 50 ? '#eab308' : '#ef4444'}
-              strokeWidth="3"
-              strokeDasharray={`${tirPercent} ${100 - tirPercent}`}
-              strokeLinecap="round"
-            />
-          </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-lg font-bold">
-            {tirPercent}%
-          </span>
-        </div>
-        <div>
-          <p className="font-semibold text-gray-800">TIR (Time in Range)</p>
-          <p className="text-xs text-gray-500">70~180 mg/dL 범위 내 비율</p>
-          <p className="text-xs text-gray-400 mt-1">
-            전체 {entries.length}건 중 {inRange}건
-          </p>
-        </div>
-      </div>
-
-      {/* History */}
-      <div className="bg-white rounded-2xl p-4 shadow-sm">
-        <h3 className="font-semibold text-gray-800 mb-3">기록 내역</h3>
-        {recent.length === 0 && (
-          <p className="text-sm text-gray-400 text-center py-4">기록이 없습니다</p>
-        )}
-        <ul className="space-y-2">
-          {recent.map((e) => (
-            <li
-              key={e.id}
-              className={`flex items-center justify-between rounded-xl p-3 ${getGlucoseColor(e.value)}`}
-            >
-              <div>
-                <span className="font-bold text-lg">{e.value}</span>
-                <span className="ml-1 text-xs">mg/dL</span>
-                <span className="ml-2 text-xs px-2 py-0.5 bg-white/60 rounded-full">
-                  {MEAL_CONTEXT_LABELS[e.mealContext]}
-                </span>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          <label className="flex min-h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-transform active:scale-[0.98]">
+            <FileUp size={16} />
+            {importing ? '가져오는 중...' : 'Libre 파일 업로드'}
+            <input type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" className="hidden" onChange={handleLibreImport} />
+          </label>
+          <div className="rounded-2xl border border-slate-200 bg-white/80 px-4 py-3 text-sm text-slate-600">
+            {libreMeta ? (
+              <div className="space-y-1">
+                <p className="font-semibold text-slate-800">최근 동기화 완료</p>
+                <p>{libreMeta.device || 'FreeStyle Libre'} · {libreMeta.readingCount}건</p>
+                <p className="text-xs text-slate-500">파일: {libreMeta.fileName}{libreMeta.skippedCount > 0 ? ` · 제외 ${libreMeta.skippedCount}건` : ''}</p>
               </div>
-              <span className="text-xs opacity-60">
-                {e.date} {e.time}
-              </span>
-            </li>
-          ))}
-        </ul>
+            ) : (
+              <div className="space-y-1">
+                <p className="font-semibold text-slate-800">아직 연동 전</p>
+                <p className="text-xs text-slate-500">원본 LibreView 내보내기 파일을 그대로 올려주세요.</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {importMessage && <p className="mt-3 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{importMessage}</p>}
+        {importError && <p className="mt-3 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{importError}</p>}
+      </div>
+
+      <div className="grid grid-cols-2 gap-3">
+        {metricCards.map(({ label, value, unit, tone, icon: Icon }) => (
+          <div key={label} className={`rounded-[24px] border border-white/80 bg-gradient-to-br ${tone} p-4 shadow-sm`}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-500">{label}</span>
+              <Icon size={16} />
+            </div>
+            <div className="mt-3 flex items-end gap-1">
+              <span className="text-2xl font-bold text-slate-900">{value}</span>
+              <span className="pb-1 text-xs text-slate-500">{unit}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">오늘의 혈당 흐름</p>
+            <p className="mt-1 text-xs text-slate-500">70~180mg/dL 범위와 현재 흐름을 함께 봅니다.</p>
+          </div>
+          <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-semibold text-violet-700">
+            {getTrendLabel(latestTrend)}
+          </div>
+        </div>
+
+        {isMounted && chartData.length > 0 ? (
+          <div className="mt-4" role="img" aria-label={`오늘의 혈당 추이 차트, ${chartData.length}개 측정값`}>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={chartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="label" tick={{ fontSize: 12, fill: '#64748b' }} />
+                <YAxis domain={[50, 250]} tick={{ fontSize: 12, fill: '#64748b' }} />
+                <Tooltip />
+                <ReferenceLine y={70} stroke="#22c55e" strokeDasharray="4 4" />
+                <ReferenceLine y={180} stroke="#ef4444" strokeDasharray="4 4" />
+                <Line type="monotone" dataKey="value" stroke="#7c3aed" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 5, fill: '#7c3aed' }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="mt-4 rounded-2xl bg-slate-50 px-4 py-10 text-center text-sm text-slate-500">
+            오늘 표시할 혈당 데이터가 아직 없습니다.
+          </div>
+        )}
+      </div>
+
+      <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-slate-900">수동 혈당 입력</p>
+            <p className="mt-1 text-xs text-slate-500">Libre 데이터가 없는 시점은 수동 기록으로 보완할 수 있습니다.</p>
+          </div>
+          <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{libreReadings}건 Libre</div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          <input
+            type="number"
+            placeholder="mg/dL"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-base focus:border-sky-300 focus:outline-none"
+          />
+          <select
+            value={mealContext}
+            onChange={(e) => setMealContext(e.target.value as GlucoseEntry['mealContext'])}
+            className="w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm"
+          >
+            <option value="fasting">공복</option>
+            <option value="before_meal">식전</option>
+            <option value="after_meal">식후</option>
+            <option value="bedtime">취침전</option>
+          </select>
+          <div className="flex gap-2">
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+            <input type="time" value={time} onChange={(e) => setTime(e.target.value)} className="flex-1 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+          </div>
+          <button onClick={handleSave} className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white active:scale-[0.99]">
+            수동 기록 저장
+          </button>
+        </div>
+      </div>
+
+      <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-slate-900">최근 혈당 기록</h3>
+          {latestEntry && <span className="text-xs text-slate-500">최근 {latestEntry.date} {latestEntry.time}</span>}
+        </div>
+        {recent.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-400">기록이 없습니다</p>
+        ) : (
+          <ul className="mt-4 space-y-3">
+            {recent.map((entry) => (
+              <li key={entry.id} className={`rounded-2xl p-4 ${getGlucoseColor(entry.value)}`}>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold">{entry.value}</span>
+                      <span className="text-xs">mg/dL</span>
+                      <span className="rounded-full bg-white/70 px-2.5 py-1 text-[11px] font-semibold">{getSourceLabel(entry)}</span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] opacity-80">
+                      <span className="rounded-full bg-white/60 px-2 py-1">{MEAL_CONTEXT_LABELS[entry.mealContext]}</span>
+                      {entry.recordType && <span className="rounded-full bg-white/60 px-2 py-1">{entry.recordType === 'scan' ? '스캔' : entry.recordType === 'historic' ? '연속 측정' : '이벤트'}</span>}
+                      {entry.device && <span className="rounded-full bg-white/60 px-2 py-1">{entry.device}</span>}
+                    </div>
+                    {entry.notes && <p className="mt-2 text-xs opacity-80">{entry.notes}</p>}
+                  </div>
+                  <span className="text-xs opacity-70">{entry.date} {entry.time}</span>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );
