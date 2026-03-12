@@ -25,7 +25,24 @@ export interface GlucoseEntry {
   value: number;
   date: string;
   time: string;
-  mealContext: 'fasting' | 'before_meal' | 'after_meal' | 'bedtime';
+  mealContext: 'fasting' | 'before_meal' | 'after_meal' | 'bedtime' | 'continuous';
+  source?: 'manual' | 'libre' | 'mock';
+  recordType?: 'historic' | 'scan' | 'event';
+  device?: string;
+  serialNumber?: string;
+  notes?: string;
+}
+
+export interface LibreImportMeta {
+  source: 'libreview_csv';
+  fileName: string;
+  importedAt: string;
+  readingCount: number;
+  skippedCount: number;
+  firstReadingAt: string;
+  lastReadingAt: string;
+  device?: string;
+  serialNumber?: string;
 }
 
 export interface MealEntry {
@@ -111,6 +128,26 @@ export const storage = {
     list.push(e);
     setItem('uricai_glucose', list);
   },
+  importLibreGlucose: (entries: GlucoseEntry[], meta: LibreImportMeta) => {
+    const existing = getItem<GlucoseEntry[]>('uricai_glucose', []);
+    const mergedMap = new Map<string, GlucoseEntry>();
+
+    [...existing, ...entries].forEach((entry) => {
+      const dedupeKey = entry.source === 'libre'
+        ? `${entry.date}T${entry.time}:${entry.serialNumber || entry.device || 'libre'}:${entry.value}`
+        : entry.id;
+      mergedMap.set(dedupeKey, entry);
+    });
+
+    const merged = Array.from(mergedMap.values()).sort((a, b) =>
+      `${a.date}T${a.time}`.localeCompare(`${b.date}T${b.time}`)
+    );
+
+    setItem('uricai_glucose', merged);
+    setItem('uricai_libre_meta', meta);
+  },
+  getLibreImportMeta: () => getItem<LibreImportMeta | null>('uricai_libre_meta', null),
+  clearLibreImportMeta: () => setItem<LibreImportMeta | null>('uricai_libre_meta', null),
 
   getMeals: () => getItem<MealEntry[]>('uricai_meals', []),
   addMeal: (e: MealEntry) => {
@@ -174,10 +211,12 @@ export const storage = {
           date,
           time,
           mealContext: ['fasting', 'after_meal', 'after_meal'][j] as GlucoseEntry['mealContext'],
+          source: 'mock',
         });
       });
     });
     setItem('uricai_glucose', glucoseData);
+    setItem('uricai_libre_meta', null);
 
     // Meals mock
     const mealData: MealEntry[] = [
