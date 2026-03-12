@@ -1,15 +1,16 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #3B82F6;
-  --accent: #14B8A6;
-  --warning: #F59E0B;
-  --danger: #EF4444;
-  --bg: #F8FAFC;
-  --card: #FFFFFF;
-  --text: #1E293B;
-  --text-secondary: #64748B;
-  --border: #E2E8F0;
+  --primary: #0f4c81;
+  --accent: #0f9d8a;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --bg: #f7fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #dbe5f0;
+  --surface-soft: rgba(255, 255, 255, 0.74);
 }
 
 * {
@@ -19,20 +20,20 @@
 }
 
 body {
-  background-color: var(--bg);
+  background:
+    radial-gradient(circle at top, rgba(219, 234, 254, 0.72), transparent 34%),
+    linear-gradient(180deg, #f8fbff 0%, var(--bg) 42%, #ffffff 100%);
   color: var(--text);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  max-width: 430px;
-  margin: 0 auto;
+  font-family: var(--font-body), 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
   min-height: 100dvh;
   position: relative;
 }
 
 .card {
   background: var(--card);
-  border-radius: 16px;
+  border-radius: 24px;
   padding: 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.06);
 }
 
 .btn-primary {
@@ -64,7 +65,7 @@ body {
 }
 
 .gradient-bg {
-  background: linear-gradient(135deg, #3B82F6 0%, #14B8A6 100%);
+  background: linear-gradient(135deg, #0f4c81 0%, #0f9d8a 100%);
 }
 
 .safe-bottom {
@@ -74,4 +75,16 @@ body {
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: rgba(15, 76, 129, 0.16);
 }

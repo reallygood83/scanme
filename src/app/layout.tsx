@@ -1,5 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import { Noto_Sans_KR } from 'next/font/google';
 import "./globals.css";
+
+const notoSansKr = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-body',
+});
 
 export const metadata: Metadata = {
   title: "UricAI - 스마트 건강관리",
@@ -21,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body className="max-w-[430px] mx-auto bg-white min-h-screen">
+      <body className={`${notoSansKr.variable} bg-[var(--bg)] text-[var(--text)] antialiased`}>
         {children}
       </body>
     </html>
