@@ -19,9 +19,6 @@ import {
   Cloud,
   LogIn,
   LogOut,
-  ArrowLeft,
-  Settings,
-  Sparkles,
   Database,
 } from 'lucide-react';
 import { loadDemoData } from '@/lib/demo-data';
@@ -65,207 +62,160 @@ export default function SettingsPage() {
   };
 
   const menuItems = [
-    { label: '가족 관리', href: '/family', icon: Users, color: 'text-lime-600' },
-    { label: '구독 관리', href: '/subscription', icon: CreditCard, color: 'text-violet-600' },
-    { label: 'GLP-1 트래커', href: '/glp1', icon: Syringe, color: 'text-cyan-600' },
-    { label: '다이어트 코치', href: '/diet', icon: Salad, color: 'text-orange-600' },
+    { label: '가족 관리', desc: '가족 구성원 추가 및 관리', href: '/family', icon: Users, bg: 'bg-lime-200' },
+    { label: '구독 관리', desc: '플랜 업그레이드', href: '/subscription', icon: CreditCard, bg: 'bg-violet-200' },
+    { label: 'GLP-1 트래커', desc: '주사 기록 및 부작용 추적', href: '/glp1', icon: Syringe, bg: 'bg-cyan-200' },
+    { label: '다이어트 코치', desc: '칼로리 및 영양소 분석', href: '/diet', icon: Salad, bg: 'bg-orange-200' },
   ];
 
   return (
-    <div className="min-h-screen pb-28 lg:pb-8">
-      <div className="mx-auto max-w-[500px] lg:max-w-none">
-        <header className="flex items-center gap-4 px-4 py-5 lg:px-6">
-          <Link href="/" className="neo-icon-btn">
-            <ArrowLeft size={20} />
-          </Link>
-          <div>
-            <div className="neo-badge-dark mb-2">
-              <Settings size={12} />
-              SETTINGS
-            </div>
-            <h1 className="neo-title">더보기</h1>
-          </div>
-        </header>
+    <div className="pb-28 lg:pb-0">
+      <div className="mb-8">
+        <h1 className="text-3xl font-black">설정</h1>
+        <p className="mt-2 text-slate-600">앱 설정 및 계정 관리</p>
+      </div>
 
-        <main className="space-y-4 px-4 pb-8 lg:px-6">
-          <div className="neo-card p-5">
-            <button
-              onClick={() => setEditingProfile(!editingProfile)}
-              className="flex w-full items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-cyan-200">
-                  <User size={20} />
+      <div className="grid gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className="grid gap-4 sm:grid-cols-2">
+            {menuItems.map(({ label, desc, href, icon: Icon, bg }) => (
+              <Link key={href} href={href} className="neo-card flex items-center gap-4 p-5 transition-all hover:translate-y-[-2px] hover:shadow-[6px_6px_0px_rgba(0,0,0,1)]">
+                <div className={`flex h-12 w-12 items-center justify-center rounded-xl border-2 border-black ${bg}`}>
+                  <Icon size={24} />
                 </div>
-                <span className="font-bold">프로필 설정</span>
-              </div>
-              <ChevronRight
-                size={20}
-                className={`transition-transform ${editingProfile ? 'rotate-90' : ''}`}
-              />
-            </button>
-            {editingProfile && (
-              <div className="mt-4 space-y-3">
-                <div>
-                  <label className="neo-caption">이름</label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="neo-input mt-1"
-                  />
+                <div className="flex-1">
+                  <p className="font-bold">{label}</p>
+                  <p className="text-sm text-slate-500">{desc}</p>
                 </div>
-                <div>
-                  <label className="neo-caption">나이</label>
-                  <input
-                    type="number"
-                    value={age}
-                    onChange={(e) => setAge(Number(e.target.value))}
-                    className="neo-input mt-1"
-                  />
-                </div>
-                <button onClick={saveProfile} className="neo-btn neo-btn-primary">
-                  <Save size={16} />
-                  저장
-                </button>
-              </div>
-            )}
+                <ChevronRight size={20} className="text-slate-400" />
+              </Link>
+            ))}
           </div>
 
-          <div className="neo-card p-5">
-            <button
-              onClick={() => setShowAlerts(!showAlerts)}
-              className="flex w-full items-center justify-between"
-            >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-orange-200">
-                  <Bell size={20} />
-                </div>
-                <span className="font-bold">알림 설정</span>
-              </div>
-              <ChevronRight
-                size={20}
-                className={`transition-transform ${showAlerts ? 'rotate-90' : ''}`}
-              />
-            </button>
-            {showAlerts && (
-              <div className="mt-4 space-y-3">
-                {[
-                  { label: '식사 기록 알림', value: mealAlert, setter: setMealAlert },
-                  { label: '약물 복용 알림', value: medAlert, setter: setMedAlert },
-                  { label: '주간 리포트 알림', value: weeklyReport, setter: setWeeklyReport },
-                ].map(({ label, value, setter }) => (
-                  <div key={label} className="flex items-center justify-between rounded-xl border-2 border-black bg-slate-50 p-3">
-                    <span className="font-semibold">{label}</span>
-                    <button
-                      onClick={() => setter(!value)}
-                      className={`h-7 w-12 rounded-full border-2 border-black transition-colors ${
-                        value ? 'bg-lime-400' : 'bg-slate-200'
-                      } relative`}
-                    >
-                      <span
-                        className={`absolute top-0.5 block h-5 w-5 rounded-full border-2 border-black bg-white transition-transform ${
-                          value ? 'translate-x-5' : 'translate-x-0.5'
-                        }`}
-                      />
-                    </button>
+          <div className="mt-6 grid gap-4 sm:grid-cols-2">
+            <div className="neo-card p-5">
+              <button
+                onClick={() => setEditingProfile(!editingProfile)}
+                className="flex w-full items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-cyan-200">
+                    <User size={20} />
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  <span className="font-bold">프로필 설정</span>
+                </div>
+                <ChevronRight size={20} className={`transition-transform ${editingProfile ? 'rotate-90' : ''}`} />
+              </button>
+              {editingProfile && (
+                <div className="mt-4 space-y-3">
+                  <div>
+                    <label className="text-sm font-semibold text-slate-600">이름</label>
+                    <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="neo-input mt-1" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-semibold text-slate-600">나이</label>
+                    <input type="number" value={age} onChange={(e) => setAge(Number(e.target.value))} className="neo-input mt-1" />
+                  </div>
+                  <button onClick={saveProfile} className="neo-btn neo-btn-primary">
+                    <Save size={16} /> 저장
+                  </button>
+                </div>
+              )}
+            </div>
 
+            <div className="neo-card p-5">
+              <button
+                onClick={() => setShowAlerts(!showAlerts)}
+                className="flex w-full items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-orange-200">
+                    <Bell size={20} />
+                  </div>
+                  <span className="font-bold">알림 설정</span>
+                </div>
+                <ChevronRight size={20} className={`transition-transform ${showAlerts ? 'rotate-90' : ''}`} />
+              </button>
+              {showAlerts && (
+                <div className="mt-4 space-y-2">
+                  {[
+                    { label: '식사 기록', value: mealAlert, setter: setMealAlert },
+                    { label: '약물 복용', value: medAlert, setter: setMedAlert },
+                    { label: '주간 리포트', value: weeklyReport, setter: setWeeklyReport },
+                  ].map(({ label, value, setter }) => (
+                    <div key={label} className="flex items-center justify-between py-2">
+                      <span className="text-sm font-medium">{label}</span>
+                      <button
+                        onClick={() => setter(!value)}
+                        className={`h-6 w-10 rounded-full border-2 border-black transition-colors ${value ? 'bg-lime-400' : 'bg-slate-200'} relative`}
+                      >
+                        <span className={`absolute top-0.5 block h-4 w-4 rounded-full border border-black bg-white transition-transform ${value ? 'translate-x-4' : 'translate-x-0.5'}`} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
           <div className="neo-card-cyan p-5">
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3 mb-4">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white">
                 <Cloud size={20} />
               </div>
-              <div className="flex-1">
-                <p className="font-bold">Firebase 동기화</p>
-                <p className="mt-1 text-sm">{cloud.message}</p>
-                {cloud.userId && <p className="mt-1 text-xs text-slate-600">UID: {cloud.userId}</p>}
-                {cloud.email && <p className="mt-1 text-xs text-slate-600">계정: {cloud.email}</p>}
-                {cloud.lastSyncedAt && <p className="mt-1 text-xs text-slate-500">최근 동기화: {new Date(cloud.lastSyncedAt).toLocaleString('ko-KR')}</p>}
+              <div>
+                <p className="font-bold">클라우드 동기화</p>
+                <p className="text-xs text-slate-600">{cloud.message}</p>
               </div>
             </div>
-
-            <div className="mt-4 space-y-2">
-              {cloud.isAnonymous ? (
-                <button
-                  onClick={() => {
-                    clearAuthError();
-                    loginWithGoogle();
-                  }}
-                  disabled={authBusy}
-                  className="neo-btn neo-btn-dark w-full disabled:opacity-50"
-                >
-                  <LogIn size={16} />
-                  {authBusy ? 'Google 로그인 연결 중...' : 'Google 로그인 연결'}
-                </button>
-              ) : (
-                <>
-                  <div className="rounded-xl border-2 border-black bg-lime-200 px-4 py-3 text-sm font-semibold">
-                    {cloud.displayName || cloud.email || 'Google 사용자'} 계정으로 동기화 중
-                  </div>
-                  <button
-                    onClick={() => {
-                      clearAuthError();
-                      logout();
-                    }}
-                    disabled={authBusy}
-                    className="neo-btn neo-btn-secondary w-full disabled:opacity-50"
-                  >
-                    <LogOut size={16} />
-                    {authBusy ? '로그아웃 중...' : '로그아웃'}
-                  </button>
-                </>
-              )}
-              {authError && <div className="neo-badge-rose w-full justify-center py-3">{authError}</div>}
-            </div>
+            {cloud.isAnonymous ? (
+              <button
+                onClick={() => { clearAuthError(); loginWithGoogle(); }}
+                disabled={authBusy}
+                className="neo-btn neo-btn-dark w-full disabled:opacity-50"
+              >
+                <LogIn size={16} />
+                {authBusy ? '연결 중...' : 'Google 로그인'}
+              </button>
+            ) : (
+              <button
+                onClick={() => { clearAuthError(); logout(); }}
+                disabled={authBusy}
+                className="neo-btn neo-btn-secondary w-full disabled:opacity-50"
+              >
+                <LogOut size={16} />
+                로그아웃
+              </button>
+            )}
+            {authError && <p className="mt-2 text-sm text-rose-600">{authError}</p>}
           </div>
 
-          {menuItems.map(({ label, href, icon: Icon, color }) => (
-            <Link key={href} href={href} className="neo-card flex items-center justify-between p-5">
-              <div className="flex items-center gap-3">
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white ${color}`}>
-                  <Icon size={20} />
-                </div>
-                <span className="font-bold">{label}</span>
-              </div>
-              <ChevronRight size={20} />
-            </Link>
-          ))}
-
           <button
-            onClick={() => {
-              loadDemoData();
-              window.location.reload();
-            }}
-            className="neo-card-violet flex w-full items-center gap-3 p-5 text-left"
+            onClick={() => { loadDemoData(); window.location.reload(); }}
+            className="neo-card-violet flex w-full items-center gap-3 p-5 text-left transition-all hover:translate-y-[-2px]"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-white">
               <Database size={20} className="text-violet-600" />
             </div>
             <div>
-              <span className="font-bold text-violet-700">데모 데이터 로드</span>
-              <p className="text-xs text-violet-600">투자자 프레젠테이션용 샘플 데이터</p>
+              <p className="font-bold text-violet-700">데모 데이터 로드</p>
+              <p className="text-xs text-violet-600">투자자 프레젠테이션용</p>
             </div>
           </button>
 
-          <button onClick={handleReset} className="neo-card flex w-full items-center gap-3 p-5 text-left">
+          <button onClick={handleReset} className="neo-card flex w-full items-center gap-3 p-5 text-left hover:bg-rose-50">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-rose-200">
               <Trash2 size={20} />
             </div>
             <span className="font-bold text-rose-600">데이터 초기화</span>
           </button>
 
-          <div className="neo-card-flat flex items-center gap-3 p-5">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border-2 border-black bg-slate-100">
-              <Info size={20} />
-            </div>
-            <span className="text-sm font-semibold text-slate-500">앱 버전: 1.0.0 MVP</span>
+          <div className="neo-card-flat p-4 text-center">
+            <p className="text-sm text-slate-500">UricAI v1.0.0 MVP</p>
           </div>
-        </main>
+        </div>
       </div>
 
       <BottomNav />
