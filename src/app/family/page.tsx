@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Baby, Droplets, GlassWater, HeartPulse, Plus, Users } from 'lucide-react';
 import Header from '@/components/Header';
-import { storage, FamilyMember } from '@/lib/storage';
-import { UserPlus, Users, Trophy, Utensils, Baby, Droplets } from 'lucide-react';
+import { summarizeGlucose } from '@/lib/glucose';
+import { storage, FamilyMember, MealEntry } from '@/lib/storage';
 
 export default function FamilyPage() {
   const [members, setMembers] = useState<FamilyMember[]>([]);
@@ -11,222 +12,170 @@ export default function FamilyPage() {
   const [newRelation, setNewRelation] = useState('');
   const [isKid, setIsKid] = useState(false);
   const [kidsMode, setKidsMode] = useState(false);
+  const [todayMeals, setTodayMeals] = useState<MealEntry[]>([]);
 
   useEffect(() => {
     setMembers(storage.getFamily());
+    const today = new Date().toISOString().split('T')[0];
+    setTodayMeals(storage.getMeals().filter((meal) => meal.date === today));
   }, []);
+
+  const glucoseSummary = useMemo(() => summarizeGlucose(storage.getGlucose()), []);
+  const latestUric = storage.getUricAcid().at(-1);
 
   const addMember = () => {
     if (!newName.trim() || !newRelation.trim()) return;
-
-    const avatarOptions = isKid
-      ? ['👦', '👧', '🧒']
-      : ['👨', '👩', '🧑', '👴', '👵'];
-    const avatar = avatarOptions[Math.floor(Math.random() * avatarOptions.length)];
-
+    const avatarPool = isKid ? ['👦', '👧', '🧒'] : ['👨', '👩', '🧑'];
     const member: FamilyMember = {
       id: `f-${Date.now()}`,
-      name: newName,
-      relation: newRelation,
+      name: newName.trim(),
+      relation: newRelation.trim(),
       isKid,
-      avatar,
+      avatar: avatarPool[Math.floor(Math.random() * avatarPool.length)],
     };
-
-    const updated = [...members, member];
-    storage.setFamily(updated);
-    setMembers(updated);
+    const nextMembers = [...members, member];
+    storage.setFamily(nextMembers);
+    setMembers(nextMembers);
     setNewName('');
     setNewRelation('');
     setIsKid(false);
   };
 
-  const removeMember = (id: string) => {
-    const updated = members.filter((m) => m.id !== id);
-    storage.setFamily(updated);
-    setMembers(updated);
-  };
-
-  // Mock shared meals for today
-  const sharedMeals = [
-    { time: '08:00', name: '현미밥 + 된장국', who: '가족 전체' },
-    { time: '12:30', name: '닭가슴살 샐러드', who: '본인' },
-    { time: '18:00', name: '두부 스테이크 + 야채볶음', who: '가족 전체' },
-  ];
-
-  const challengeProgress = 3;
+  const challengeDays = 4;
   const challengeTotal = 7;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 max-w-[430px] mx-auto">
-      <Header title="가족 건강" showBack />
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff5eb,transparent_36%),linear-gradient(180deg,#fffaf5_0%,#f8fafc_100%)]">
+      <div className="mx-auto max-w-[430px] pb-10">
+        <Header title="가족 건강" showBack />
 
-      <main className="flex-1 overflow-y-auto px-4 pb-8 space-y-4">
-        {/* Family Members */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <Users size={16} className="text-green-500" />
-            가족 구성원
-          </h3>
+        <main className="space-y-4 px-4 pb-8">
+          <section className="rounded-[30px] bg-slate-950 p-5 text-white shadow-[0_20px_60px_rgba(15,23,42,0.16)]">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-orange-200">Family Plan</p>
+                <h2 className="mt-2 text-2xl font-semibold">우리 가족 건강판</h2>
+                <p className="mt-2 text-sm leading-6 text-slate-300">가족 식사, 혈당, 수분 습관을 한 번에 관리하는 홈베이스입니다.</p>
+              </div>
+              <div className="rounded-2xl bg-white/10 p-3">
+                <Users size={22} className="text-orange-200" />
+              </div>
+            </div>
 
-          {members.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">
-              가족 구성원을 추가해 주세요
-            </p>
-          ) : (
-            <div className="space-y-2 mb-4">
-              {members.map((member) => (
-                <div
-                  key={member.id}
-                  className="flex items-center justify-between border border-gray-100 rounded-xl p-3"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{member.avatar}</span>
+            <div className="mt-5 grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-2xl bg-white/8 px-3 py-4">
+                <p className="text-xs text-slate-300">구성원</p>
+                <p className="mt-2 text-2xl font-semibold">{members.length + 1}</p>
+              </div>
+              <div className="rounded-2xl bg-white/8 px-3 py-4">
+                <p className="text-xs text-slate-300">TIR</p>
+                <p className="mt-2 text-2xl font-semibold">{glucoseSummary.timeInRange}%</p>
+              </div>
+              <div className="rounded-2xl bg-white/8 px-3 py-4">
+                <p className="text-xs text-slate-300">요산</p>
+                <p className="mt-2 text-2xl font-semibold">{latestUric ? latestUric.value.toFixed(1) : '--'}</p>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-orange-100">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">오늘의 가족 식사 브리핑</p>
+                <p className="mt-1 text-xs text-slate-500">한 번의 식사 기록을 가족 관점에서 바로 공유합니다.</p>
+              </div>
+              <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{todayMeals.length}끼 공유</span>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {todayMeals.length > 0 ? todayMeals.map((meal) => (
+                <div key={meal.id} className="rounded-2xl bg-orange-50/60 px-4 py-3">
+                  <div className="flex items-center justify-between gap-3">
                     <div>
-                      <p className="text-sm font-medium">{member.name}</p>
-                      <p className="text-xs text-gray-400">
-                        {member.relation}
-                        {member.isKid && (
-                          <span className="ml-1 text-blue-500 font-medium">아동</span>
-                        )}
-                      </p>
+                      <p className="text-sm font-semibold text-slate-900">{meal.name}</p>
+                      <p className="mt-1 text-xs text-slate-500">{meal.calories}kcal · GI {meal.gi} · 퓨린 {meal.purineLevel}</p>
+                    </div>
+                    <span className="text-xs text-slate-400">{meal.time}</span>
+                  </div>
+                </div>
+              )) : (
+                <div className="rounded-2xl bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">오늘 공유된 식사 기록이 없습니다.</div>
+              )}
+            </div>
+          </section>
+
+          <section className="grid grid-cols-2 gap-3">
+            <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+              <div className="flex items-center gap-2 text-sky-600">
+                <HeartPulse size={18} />
+                <p className="text-sm font-semibold text-slate-900">보호자 요약</p>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">혈당 범위 유지율 {glucoseSummary.timeInRange}% · 고혈당 {glucoseSummary.highCount}건 · 저혈당 {glucoseSummary.lowCount}건</p>
+            </div>
+            <div className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+              <div className="flex items-center gap-2 text-cyan-600">
+                <GlassWater size={18} />
+                <p className="text-sm font-semibold text-slate-900">가족 챌린지</p>
+              </div>
+              <p className="mt-4 text-sm leading-6 text-slate-600">이번 주 물 2L 챌린지 {challengeDays}/{challengeTotal}일 달성</p>
+            </div>
+          </section>
+
+          <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">가족 구성원 추가</p>
+                <p className="mt-1 text-xs text-slate-500">관리자, 멤버, 아이 역할을 가볍게 시작합니다.</p>
+              </div>
+              <button onClick={() => setKidsMode((current) => !current)} className={`rounded-full px-3 py-1 text-xs font-semibold ${kidsMode ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-500'}`}>
+                {kidsMode ? '키즈 모드 ON' : '키즈 모드 OFF'}
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <input value={newName} onChange={(event) => setNewName(event.target.value)} placeholder="이름" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+              <input value={newRelation} onChange={(event) => setNewRelation(event.target.value)} placeholder="관계 (예: 배우자, 아들)" className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm" />
+              <button onClick={() => setIsKid((current) => !current)} className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold ${isKid ? 'bg-sky-100 text-sky-700' : 'bg-slate-100 text-slate-600'}`}>
+                <Baby size={16} />
+                {isKid ? '아이 구성원으로 추가' : '성인 구성원으로 추가'}
+              </button>
+              <button onClick={addMember} className="flex items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white">
+                <Plus size={16} />
+                가족 구성원 저장
+              </button>
+            </div>
+          </section>
+
+          <section className="rounded-[28px] bg-white p-5 shadow-sm ring-1 ring-slate-100">
+            <p className="text-sm font-semibold text-slate-900">우리 가족 멤버</p>
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-lg">🧑</div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">나</p>
+                    <p className="text-xs text-slate-500">관리자 · 요산 {latestUric ? latestUric.value.toFixed(1) : '--'} · 혈당 평균 {glucoseSummary.average || '--'}</p>
+                  </div>
+                </div>
+                <Droplets size={16} className="text-sky-500" />
+              </div>
+
+              {members.map((member) => (
+                <div key={member.id} className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`flex h-11 w-11 items-center justify-center rounded-2xl text-lg ${member.isKid ? 'bg-sky-100' : 'bg-orange-100'}`}>{member.avatar}</div>
+                    <div>
+                      <p className="text-sm font-semibold text-slate-900">{member.name}</p>
+                      <p className="text-xs text-slate-500">{member.relation}{member.isKid ? ' · 아이 모드 추천' : ''}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => removeMember(member.id)}
-                    className="text-xs text-red-400 hover:text-red-600"
-                  >
-                    삭제
-                  </button>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${member.isKid ? 'bg-sky-100 text-sky-700' : 'bg-orange-100 text-orange-700'}`}>{member.isKid ? 'Child' : 'Member'}</span>
                 </div>
               ))}
             </div>
-          )}
-
-          {/* Add Member Form */}
-          <div className="border-t border-gray-100 pt-4 space-y-3">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                placeholder="이름"
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
-              <input
-                type="text"
-                placeholder="관계 (예: 배우자)"
-                value={newRelation}
-                onChange={(e) => setNewRelation(e.target.value)}
-                className="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-              />
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Baby size={16} className="text-blue-400" />
-                <span className="text-sm">아동 여부</span>
-                <button
-                  onClick={() => setIsKid(!isKid)}
-                  className={`w-10 h-5 rounded-full transition-colors ${
-                    isKid ? 'bg-blue-500' : 'bg-gray-300'
-                  } relative`}
-                >
-                  <span
-                    className={`block w-4 h-4 bg-white rounded-full shadow absolute top-0.5 transition-transform ${
-                      isKid ? 'translate-x-5' : 'translate-x-0.5'
-                    }`}
-                  />
-                </button>
-              </div>
-              <button
-                onClick={addMember}
-                className="flex items-center gap-1 px-4 py-2 bg-green-500 text-white rounded-xl text-sm font-medium"
-              >
-                <UserPlus size={14} />
-                추가
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Meal Sharing */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <Utensils size={16} className="text-orange-500" />
-            오늘의 가족 식단
-          </h3>
-          <div className="space-y-2">
-            {sharedMeals.map((meal, i) => (
-              <div
-                key={i}
-                className="flex items-center justify-between border border-gray-100 rounded-xl p-3"
-              >
-                <div>
-                  <p className="text-sm font-medium">{meal.name}</p>
-                  <p className="text-xs text-gray-400">{meal.who}</p>
-                </div>
-                <span className="text-xs text-gray-400">{meal.time}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Kids Mode Toggle */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Baby size={18} className="text-blue-400" />
-              <div>
-                <p className="text-sm font-medium">키즈 모드</p>
-                <p className="text-xs text-gray-400">아이 친화적 간소화 UI</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setKidsMode(!kidsMode)}
-              className={`w-11 h-6 rounded-full transition-colors ${
-                kidsMode ? 'bg-blue-500' : 'bg-gray-300'
-              } relative`}
-            >
-              <span
-                className={`block w-5 h-5 bg-white rounded-full shadow absolute top-0.5 transition-transform ${
-                  kidsMode ? 'translate-x-5' : 'translate-x-0.5'
-                }`}
-              />
-            </button>
-          </div>
-          {kidsMode && (
-            <div className="mt-3 p-3 bg-blue-50 rounded-xl">
-              <p className="text-xs text-blue-600">
-                키즈 모드가 활성화되었습니다. 아이에게 적합한 간소화된 UI가 표시됩니다.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Family Challenge */}
-        <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1">
-            <Trophy size={16} className="text-yellow-500" />
-            이번 주 챌린지
-          </h3>
-          <div className="border border-yellow-100 bg-yellow-50 rounded-xl p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Droplets size={18} className="text-blue-400" />
-              <p className="text-sm font-medium">하루 2L 물 마시기</p>
-            </div>
-            <div className="w-full h-3 bg-yellow-100 rounded-full overflow-hidden mb-2">
-              <div
-                className="h-full bg-yellow-400 rounded-full transition-all"
-                style={{
-                  width: `${(challengeProgress / challengeTotal) * 100}%`,
-                }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 text-right">
-              {challengeProgress}/{challengeTotal}일 완료
-            </p>
-          </div>
-        </div>
-      </main>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }
